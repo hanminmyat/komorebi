@@ -3,6 +3,8 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import LogoutButton from "@/components/LogoutButton";
 import DeleteCapsuleButton from "@/components/DeleteCapsuleButton";
+import AudioRecorder from "@/components/AudioRecorder";
+import MediaItemActions from "@/components/MediaItemActions";
 
 export default async function CapsuleDetailPage({
   params,
@@ -36,6 +38,10 @@ export default async function CapsuleDetailPage({
     .eq("capsule_id", capsule.id)
     .order("order_index");
 
+  const canAddMedia = (mediaItems?.length || 0) < 10;
+  const showAudioRecorder =
+    canAddMedia && (capsule.type === "audio" || capsule.type === "mixed");
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b px-4 py-3">
@@ -54,7 +60,10 @@ export default async function CapsuleDetailPage({
         <div className="mb-6 flex items-start justify-between">
           <div>
             <div className="mb-1 flex items-center gap-2">
-              <Link href="/dashboard" className="text-sm text-gray-600 hover:text-black">
+              <Link
+                href="/dashboard"
+                className="text-sm text-gray-600 hover:text-black"
+              >
                 ← Back
               </Link>
               <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize">
@@ -72,8 +81,19 @@ export default async function CapsuleDetailPage({
           <DeleteCapsuleButton capsuleId={capsule.id} />
         </div>
 
+        {showAudioRecorder && (
+          <div className="mb-6">
+            <AudioRecorder
+              capsuleId={capsule.id}
+              currentMediaCount={mediaItems?.length || 0}
+            />
+          </div>
+        )}
+
         <div className="rounded-lg border p-6">
-          <h2 className="mb-4 font-semibold">Media ({mediaItems?.length || 0})</h2>
+          <h2 className="mb-4 font-semibold">
+            Media ({mediaItems?.length || 0}/10)
+          </h2>
           {mediaItems && mediaItems.length > 0 ? (
             <div className="space-y-3">
               {mediaItems.map((item) => (
@@ -100,12 +120,20 @@ export default async function CapsuleDetailPage({
                       className="h-16 w-16 rounded object-cover"
                     />
                   )}
+                  <MediaItemActions
+                    itemId={item.id}
+                    capsuleId={capsule.id}
+                    storagePath={item.url.split("/").slice(-3).join("/")}
+                  />
                 </div>
               ))}
             </div>
           ) : (
             <p className="text-sm text-gray-600">
-              No media added yet. Audio and image uploads coming in the next slice.
+              No media added yet.{" "}
+              {showAudioRecorder
+                ? "Use the recorder above to add audio."
+                : "Add media to this capsule."}
             </p>
           )}
         </div>
