@@ -5,7 +5,7 @@ import LogoutButton from "@/components/LogoutButton";
 import DeleteCapsuleButton from "@/components/DeleteCapsuleButton";
 import AudioRecorder from "@/components/AudioRecorder";
 import ImageUploader from "@/components/ImageUploader";
-import MediaItemActions from "@/components/MediaItemActions";
+import MediaList from "@/components/MediaList";
 
 export default async function CapsuleDetailPage({
   params,
@@ -106,47 +106,19 @@ export default async function CapsuleDetailPage({
           <h2 className="mb-4 font-semibold">
             Media ({mediaItems?.length || 0}/10)
           </h2>
+          <p className="mb-3 text-xs text-gray-500">
+            Drag to reorder items
+          </p>
           {mediaItems && mediaItems.length > 0 ? (
-            <div className="space-y-3">
-              {mediaItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-3 rounded-md border p-3"
-                >
-                  <span className="text-2xl">
-                    {item.type === "audio" ? "🎵" : "🖼️"}
-                  </span>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium capitalize">{item.type}</p>
-                    <p className="text-xs text-gray-400">
-                      Position {item.order_index + 1}
-                    </p>
-                  </div>
-                  {item.type === "audio" && (
-                    <audio controls src={item.url} className="h-8" />
-                  )}
-                  {item.type === "image" && (
-                    <img
-                      src={item.url}
-                      alt="Capsule media"
-                      className="h-16 w-16 rounded object-cover"
-                    />
-                  )}
-                  <MediaItemActions
-                    itemId={item.id}
-                    capsuleId={capsule.id}
-                    mediaType={item.type}
-                    storagePath={item.url.split("/").slice(-3).join("/")}
-                  />
-                </div>
-              ))}
-            </div>
+            <MediaList items={mediaItems} capsuleId={capsule.id} />
           ) : (
             <p className="text-sm text-gray-600">
               No media added yet.{" "}
               {showAudioRecorder
                 ? "Use the recorder above to add audio."
-                : "Add media to this capsule."}
+                : showImageUploader
+                  ? "Use the uploader above to add images."
+                  : "Add media to this capsule."}
             </p>
           )}
         </div>
