@@ -46,17 +46,17 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #1A1714;
-    --foreground: #E8E0D4;
+    --background: #141816;
+    --foreground: #E4DDD4;
     --primary: #D4A07A;
     --primary-hover: #E0B08A;
     --secondary: #D4A88C;
     --secondary-hover: #E0B89C;
     --accent: #7BAF94;
     --accent-hover: #8BC0A4;
-    --surface: #262220;
-    --muted: #A89880;
-    --border: #3A3430;
+    --surface: #1C211E;
+    --muted: #9A9488;
+    --border: #2E3330;
     --sunflower: #D4B86A;
     --tangerine: #D4A07A;
     --mint: #8BBFA0;
@@ -71,4 +71,16 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Focus ring for keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 0.75rem;
+}
+
+/* Remove default focus ring for mouse users */
+:focus:not(:focus-visible) {
+  outline: none;
 }

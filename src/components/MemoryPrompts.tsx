@@ -36,7 +36,7 @@ export default function MemoryPrompts({
       <button
         type="button"
         onClick={onToggle}
-        className={`inline-flex h-12 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 text-xs font-medium transition-all ${
+        className={`inline-flex h-11 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 text-xs font-medium transition-all sm:h-12 ${
           isOpen
             ? "border-primary bg-primary/5 text-primary"
             : "border-dashed border-border text-muted hover:border-primary/40 hover:text-primary hover:bg-surface"
@@ -64,15 +64,15 @@ export default function MemoryPrompts({
         <>
           <div className="fixed inset-0 z-10" onClick={onToggle} />
 
-          <div className="absolute right-0 top-full z-20 mt-2 w-80 rounded-xl border border-border bg-background p-1 shadow-2xl shadow-black/10 sm:left-0 sm:right-auto">
+          <div className="absolute right-0 top-full z-20 mt-2 w-72 rounded-xl border border-border bg-background p-1 shadow-2xl shadow-black/10 sm:left-0 sm:right-auto sm:w-80">
             <div className="mb-1 flex items-center justify-between px-3 pt-2 pb-1">
-              <p className="text-xs font-semibold text-muted uppercase tracking-wide">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                 Try one of these
               </p>
               <button
                 type="button"
                 onClick={onToggle}
-                className="rounded-md p-0.5 text-muted hover:text-foreground transition-colors"
+                className="rounded-md p-0.5 text-muted transition-colors hover:text-foreground"
               >
                 <svg
                   width="14"
@@ -90,11 +90,11 @@ export default function MemoryPrompts({
               </button>
             </div>
 
-            <p className="mb-2 px-3 text-xs text-muted leading-relaxed">
+            <p className="mb-2 px-3 text-xs leading-relaxed text-muted">
               Click a prompt to fill the title, then make it your own.
             </p>
 
-            <div className="max-h-56 overflow-y-auto">
+            <div className="max-h-48 overflow-y-auto sm:max-h-56">
               {memoryPrompts.map((prompt) => (
                 <button
                   key={prompt}

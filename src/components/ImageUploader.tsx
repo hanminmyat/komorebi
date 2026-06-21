@@ -183,7 +183,7 @@ export default function ImageUploader({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onClick={() => fileInputRef.current?.click()}
-        className={`cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition-all ${
+        className={`cursor-pointer rounded-xl border-2 border-dashed p-6 text-center transition-all sm:p-8 ${
           dragOver
             ? "border-primary bg-primary/5"
             : "border-border hover:border-primary/40 hover:bg-surface"
@@ -192,7 +192,7 @@ export default function ImageUploader({
         {uploading ? (
           <div className="flex flex-col items-center gap-2">
             <svg
-              className="h-8 w-8 animate-spin text-primary"
+              className="h-7 w-7 animate-spin text-primary sm:h-8 sm:w-8"
               viewBox="0 0 24 24"
               fill="none"
             >
@@ -204,8 +204,8 @@ export default function ImageUploader({
         ) : (
           <>
             <div className="mb-3 flex justify-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary/10 text-secondary">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/10 text-secondary sm:h-12 sm:w-12">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="sm:w-[22px] sm:h-[22px]">
                   <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
                   <circle cx="9" cy="9" r="2" />
                   <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />

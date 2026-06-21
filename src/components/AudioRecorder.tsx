@@ -200,25 +200,25 @@ export default function AudioRecorder({
       )}
 
       {recording ? (
-        <div className="rounded-xl border-2 border-red-300 bg-red-50/50 p-6 text-center">
-          <div className="mb-3 flex justify-center">
+        <div className="rounded-xl border-2 border-red-300 bg-red-50/50 p-4 text-center sm:p-6">
+          <div className="mb-2 flex justify-center sm:mb-3">
             <div className="h-3 w-3 animate-pulse rounded-full bg-red-600" />
           </div>
-          <div className={`mb-3 font-mono font-medium text-3xl ${
+          <div className={`mb-2 font-mono font-medium text-2xl sm:mb-3 sm:text-3xl ${
             elapsed >= MAX_SECONDS - 10 ? "text-red-600 animate-pulse" : "text-red-600"
           }`}>
             {formatTime(elapsed)}
-            <span className="text-sm text-muted ml-1">/ {formatTime(MAX_SECONDS)}</span>
+            <span className="ml-1 text-xs text-muted sm:text-sm">/ {formatTime(MAX_SECONDS)}</span>
           </div>
           {elapsed < MIN_SECONDS && (
-            <p className="mb-3 text-xs text-muted">
+            <p className="mb-2 text-xs text-muted sm:mb-3">
               Minimum {formatTime(MIN_SECONDS)} required
             </p>
           )}
           <div className="flex items-center justify-center gap-3">
             <button
               onClick={stopRecording}
-              className="inline-flex items-center gap-2 rounded-full bg-red-600 px-6 py-3 text-sm font-medium text-white shadow-lg shadow-red-200 transition-all hover:bg-red-700"
+              className="inline-flex items-center gap-2 rounded-full bg-red-600 px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-red-200 transition-all hover:bg-red-700 sm:px-6 sm:py-3"
             >
               <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
                 <rect x="6" y="6" width="12" height="12" rx="1" />
@@ -228,10 +228,10 @@ export default function AudioRecorder({
           </div>
         </div>
       ) : audioUrl ? (
-        <div className="rounded-xl border border-border bg-surface p-5">
+        <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
           <div className="mb-3 flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/20 text-primary">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/20 text-primary sm:h-10 sm:w-10">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="sm:w-[18px] sm:h-[18px]">
                 <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
                 <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                 <line x1="12" x2="12" y1="19" y2="22" />
@@ -242,23 +242,23 @@ export default function AudioRecorder({
               <p className="text-xs text-muted">
                 {formatTime(elapsed)}
                 {elapsed < MIN_SECONDS && (
-                  <span className="text-red-500 ml-2">Too short (min {formatTime(MIN_SECONDS)})</span>
+                  <span className="ml-2 text-red-500">Too short (min {formatTime(MIN_SECONDS)})</span>
                 )}
               </p>
             </div>
           </div>
-          <audio controls src={audioUrl} className="w-full mb-3" />
-          <div className="flex gap-3">
+          <audio controls src={audioUrl} className="mb-3 w-full" />
+          <div className="flex gap-2 sm:gap-3">
             <button
               onClick={handleDiscard}
-              className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted transition-colors hover:bg-surface hover:text-foreground"
+              className="flex-1 rounded-lg border border-border px-3 py-2.5 text-xs font-medium text-muted transition-colors hover:bg-surface hover:text-foreground sm:px-4 sm:text-sm"
             >
               Discard
             </button>
             <button
               onClick={handleUpload}
               disabled={uploading || elapsed < MIN_SECONDS}
-              className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-md shadow-primary/20 transition-all hover:bg-primary-hover disabled:opacity-50"
+              className="flex-1 rounded-lg bg-primary px-3 py-2.5 text-xs font-medium text-white shadow-md shadow-primary/20 transition-all hover:bg-primary-hover disabled:opacity-50 sm:px-4 sm:text-sm"
             >
               {uploading ? "Saving..." : "Save to Album"}
             </button>
@@ -267,10 +267,10 @@ export default function AudioRecorder({
       ) : (
         <button
           onClick={startRecording}
-          className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border p-6 text-center transition-all hover:border-primary/40 hover:bg-surface"
+          className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border p-4 text-center transition-all hover:border-primary/40 hover:bg-surface sm:p-6"
         >
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary sm:h-12 sm:w-12">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="sm:w-[22px] sm:h-[22px]">
               <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
               <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
               <line x1="12" x2="12" y1="19" y2="22" />
@@ -279,7 +279,7 @@ export default function AudioRecorder({
           <div className="text-left">
             <p className="text-sm font-medium text-foreground">Record a voice memory</p>
             <p className="text-xs text-muted">
-              1–3 minutes · 96kbps voice quality · 1 recording per capsule
+              1–3 min · 96kbps · 1 per capsule
             </p>
           </div>
         </button>

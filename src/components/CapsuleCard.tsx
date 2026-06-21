@@ -12,18 +12,18 @@ export interface Capsule {
 const typeConfig = {
   audio: {
     label: "Audio",
-    bg: "bg-blue-100",
-    text: "text-blue-800",
+    bg: "bg-sky/15",
+    text: "text-sky",
   },
   photo: {
     label: "Photo",
-    bg: "bg-green-100",
-    text: "text-green-800",
+    bg: "bg-leaf/15",
+    text: "text-leaf",
   },
   mixed: {
     label: "Mixed",
-    bg: "bg-purple-100",
-    text: "text-purple-800",
+    bg: "bg-blossom/15",
+    text: "text-blossom",
   },
 } as const;
 
@@ -33,7 +33,7 @@ export default function CapsuleCard({ capsule }: { capsule: Capsule }) {
   const displayDate = capsule.memory_date
     ? new Date(capsule.memory_date + "T00:00:00").toLocaleDateString("en-US", {
         year: "numeric",
-        month: "long",
+        month: "short",
         day: "numeric",
       })
     : null;
@@ -41,26 +41,26 @@ export default function CapsuleCard({ capsule }: { capsule: Capsule }) {
   return (
     <Link
       href={`/capsules/${capsule.id}`}
-      className="group block rounded-xl border border-border bg-surface p-5 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
+      className="group block rounded-xl border border-border bg-surface p-4 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 sm:p-5"
     >
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors leading-snug">
+      <div className="flex items-start justify-between gap-2 sm:gap-3">
+        <h3 className="text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary sm:text-base">
           {capsule.title}
         </h3>
         <span
-          className={`shrink-0 rounded-md px-2.5 py-0.5 text-xs font-medium ${config.bg} ${config.text}`}
+          className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-medium ${config.bg} ${config.text} sm:px-2.5`}
         >
           {config.label}
         </span>
       </div>
 
       {capsule.description && (
-        <p className="mt-2 text-sm text-muted line-clamp-2 leading-relaxed">
+        <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted sm:text-sm">
           {capsule.description}
         </p>
       )}
 
-      <div className="mt-3 flex items-center gap-2 text-xs text-muted">
+      <div className="mt-2 flex items-center gap-2 text-xs text-muted sm:mt-3">
         <svg
           width="14"
           height="14"
@@ -83,7 +83,7 @@ export default function CapsuleCard({ capsule }: { capsule: Capsule }) {
           <span>
             {new Date(capsule.created_at).toLocaleDateString("en-US", {
               year: "numeric",
-              month: "long",
+              month: "short",
               day: "numeric",
             })}
           </span>

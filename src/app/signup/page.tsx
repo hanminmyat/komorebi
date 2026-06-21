@@ -3,13 +3,16 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import Logo from "@/components/Logo";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
   const supabase = createClient();
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -17,7 +20,7 @@ export default function SignupPage() {
     setError(null);
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
@@ -28,20 +31,37 @@ export default function SignupPage() {
       return;
     }
 
-    setSuccess(true);
+    // If a session is returned, email confirmation is disabled — auto-login
+    if (data.session) {
+      router.push("/dashboard");
+      router.refresh();
+      return;
+    }
+
+    // No session means confirmation email was sent
+    setAwaitingConfirmation(true);
     setLoading(false);
   };
 
-  if (success) {
+  if (awaitingConfirmation) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="w-full max-w-md space-y-4 px-4 text-center">
-          <h1 className="text-3xl font-bold">Check your email</h1>
-          <p className="text-gray-600">
-            We sent a confirmation link to <strong>{email}</strong>
+        <div className="w-full max-w-md space-y-6 px-4 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+              <rect width="20" height="16" x="2" y="4" rx="2" />
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold">Check your email</h1>
+          <p className="text-muted">
+            We sent a confirmation link to <strong className="text-foreground">{email}</strong>
           </p>
-          <Link href="/login" className="inline-block font-medium underline">
-            Back to login
+          <div className="rounded-xl border border-border bg-surface/50 p-4 text-sm text-muted">
+            <p>Click the link in the email to activate your account, then come back to sign in.</p>
+          </div>
+          <Link href="/login" className="inline-block font-medium text-foreground underline transition-colors hover:text-primary">
+            Back to sign in
           </Link>
         </div>
       </div>
@@ -52,13 +72,16 @@ export default function SignupPage() {
     <div className="flex min-h-screen items-center justify-center">
       <div className="w-full max-w-md space-y-8 px-4">
         <div className="text-center">
-          <h1 className="text-3xl font-bold">Create account</h1>
-          <p className="mt-2 text-gray-600">Start preserving family memories</p>
+          <div className="mb-6 flex justify-center">
+            <Logo size="lg" href="/" />
+          </div>
+          <h1 className="text-2xl font-bold sm:text-3xl">Create account</h1>
+          <p className="mt-2 text-muted">Start preserving family memories</p>
         </div>
 
         <form onSubmit={handleSignup} className="mt-8 space-y-4">
           {error && (
-            <div className="rounded-md bg-red-50 p-3 text-sm text-red-600">
+            <div className="rounded-xl bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/30 dark:text-red-400">
               {error}
             </div>
           )}
@@ -73,7 +96,7 @@ export default function SignupPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-black focus:outline-none"
+              className="mt-1 block w-full rounded-xl border border-border bg-surface/50 px-3 py-2.5 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
             />
           </div>
 
@@ -88,22 +111,22 @@ export default function SignupPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-black focus:outline-none"
+              className="mt-1 block w-full rounded-xl border border-border bg-surface/50 px-3 py-2.5 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-black py-2 text-white hover:bg-gray-800 disabled:opacity-50"
+            className="w-full rounded-xl bg-primary py-2.5 font-medium text-white shadow-sm transition-all hover:bg-primary-hover hover:shadow-md disabled:opacity-50"
           >
             {loading ? "Creating account..." : "Create account"}
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-600">
+        <p className="text-center text-sm text-muted">
           Already have an account?{" "}
-          <Link href="/login" className="font-medium underline">
+          <Link href="/login" className="font-medium text-foreground underline transition-colors hover:text-primary">
             Sign in
           </Link>
         </p>

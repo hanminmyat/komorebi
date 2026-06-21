@@ -6,14 +6,15 @@ import DeleteCapsuleButton from "@/components/DeleteCapsuleButton";
 import AudioRecorder from "@/components/AudioRecorder";
 import ImageUploader from "@/components/ImageUploader";
 import MediaAlbum from "@/components/MediaAlbum";
+import Logo from "@/components/Logo";
 
 const MAX_IMAGES = 10;
 const MAX_AUDIO = 1;
 
 const typeColors: Record<string, string> = {
-  audio: "bg-blue-100 text-blue-800",
-  photo: "bg-green-100 text-green-800",
-  mixed: "bg-purple-100 text-purple-800",
+  audio: "bg-sky/15 text-sky",
+  photo: "bg-leaf/15 text-leaf",
+  mixed: "bg-blossom/15 text-blossom",
 };
 
 export default async function CapsuleDetailPage({
@@ -81,31 +82,35 @@ export default async function CapsuleDetailPage({
       {/* Header */}
       <header className="border-b border-border bg-surface/50 px-4 py-3">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 text-sm text-muted transition-colors hover:text-foreground"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-            Back to capsules
-          </Link>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted">{user.email}</span>
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+              <span className="hidden sm:inline">Back</span>
+            </Link>
+            <div className="h-4 w-px bg-border" />
+            <Logo size="sm" href="/dashboard" />
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="hidden text-sm text-muted sm:inline">{user.email}</span>
             <LogoutButton />
           </div>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:py-8">
         {/* Album Cover Card */}
-        <div className="mb-10 overflow-hidden rounded-2xl border border-border bg-surface shadow-lg shadow-black/5">
-          <div className="p-6 sm:p-10">
-            <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="mb-8 overflow-hidden rounded-2xl border border-border bg-surface shadow-lg shadow-black/5 sm:mb-10">
+          <div className="p-5 sm:p-8 lg:p-10">
+            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
               <div className="flex-1">
                 {/* Memory date */}
                 {displayDate ? (
-                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm text-muted">
+                  <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs text-muted sm:mb-4 sm:text-sm">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
                       <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
                       <line x1="16" x2="16" y1="2" y2="6" />
@@ -115,7 +120,7 @@ export default async function CapsuleDetailPage({
                     {displayDate}
                   </div>
                 ) : (
-                  <div className="mb-4 inline-flex items-center gap-2 text-sm text-muted">
+                  <div className="mb-3 inline-flex items-center gap-2 text-xs text-muted sm:mb-4 sm:text-sm">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
                       <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
                       <line x1="16" x2="16" y1="2" y2="6" />
@@ -126,39 +131,41 @@ export default async function CapsuleDetailPage({
                   </div>
                 )}
 
-                <h1 className="text-2xl font-bold leading-tight text-foreground sm:text-3xl">
+                <h1 className="text-xl font-bold leading-tight text-foreground sm:text-2xl lg:text-3xl">
                   {capsule.title}
                 </h1>
 
                 {capsule.description && (
-                  <p className="mt-3 max-w-2xl text-muted leading-relaxed">
+                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted sm:mt-3">
                     {capsule.description}
                   </p>
                 )}
 
-                <div className="mt-4 flex flex-wrap items-center gap-3">
+                <div className="mt-3 flex flex-wrap items-center gap-2 sm:mt-4 sm:gap-3">
                   <span className={`inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium capitalize ${
-                    typeColors[capsule.type] || "bg-gray-100 text-gray-800"
+                    typeColors[capsule.type] || "bg-surface text-muted"
                   }`}>
                     {capsule.type}
                   </span>
-                  <span className="text-xs text-muted">Album created {createdDate}</span>
+                  <span className="text-xs text-muted">Created {createdDate}</span>
                   <span className="text-xs text-muted">
                     {imageCount} photo{imageCount !== 1 ? "s" : ""} · {audioCount} recording{audioCount !== 1 ? "s" : ""}
                   </span>
                 </div>
               </div>
 
-              <DeleteCapsuleButton capsuleId={capsule.id} />
+              <div className="self-start">
+                <DeleteCapsuleButton capsuleId={capsule.id} />
+              </div>
             </div>
           </div>
         </div>
 
         {/* Album Spread */}
-        <section className="mb-10">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Album</h2>
-            <div className="flex items-center gap-4 text-sm text-muted">
+        <section className="mb-8 sm:mb-10">
+          <div className="mb-4 flex items-center justify-between sm:mb-6">
+            <h2 className="text-base font-semibold text-foreground sm:text-lg">Album</h2>
+            <div className="flex items-center gap-3 text-xs text-muted sm:gap-4 sm:text-sm">
               <span>📷 {imageCount}/{MAX_IMAGES}</span>
               <span>🎙 {audioCount}/{MAX_AUDIO}</span>
             </div>
@@ -169,9 +176,9 @@ export default async function CapsuleDetailPage({
 
         {/* Add to Album */}
         {(showImageUploader || showAudioRecorder) && (
-          <section className="rounded-2xl border border-border bg-surface p-6 sm:p-8">
-            <h2 className="mb-6 text-lg font-semibold text-foreground">Add to this album</h2>
-            <div className="grid gap-6 sm:grid-cols-2">
+          <section className="rounded-2xl border border-border bg-surface p-4 sm:p-6 lg:p-8">
+            <h2 className="mb-4 text-base font-semibold text-foreground sm:mb-6 sm:text-lg">Add to this album</h2>
+            <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
               {showImageUploader && (
                 <div>
                   <ImageUploader capsuleId={capsule.id} imageCount={imageCount} />
@@ -187,7 +194,7 @@ export default async function CapsuleDetailPage({
         )}
 
         {!showImageUploader && !showAudioRecorder && mediaCount > 0 && (
-          <div className="rounded-2xl border border-border bg-surface p-6 text-center">
+          <div className="rounded-2xl border border-border bg-surface p-4 text-center sm:p-6">
             <p className="text-sm text-muted">
               Album is full — {imageCount}/{MAX_IMAGES} photos and {audioCount}/{MAX_AUDIO} recording.
             </p>
@@ -197,9 +204,15 @@ export default async function CapsuleDetailPage({
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border py-6">
-        <div className="mx-auto max-w-5xl px-4 text-center text-sm text-muted">
-          Komorebi · Turn family stories into living memories
+      <footer className="border-t border-border py-4 sm:py-6">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4">
+          <div className="flex items-center gap-2 text-xs text-muted sm:text-sm">
+            <Logo size="sm" showText={false} />
+            <span>Komorebi</span>
+          </div>
+          <p className="text-xs text-muted sm:text-sm">
+            Turn family stories into living memories
+          </p>
         </div>
       </footer>
     </div>
