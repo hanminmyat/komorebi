@@ -40,9 +40,6 @@ next-env.d.ts
 # vercel
 .vercel
 
-# screenshots / design references (don't bloat the repo)
-*.png
-
 # claude code — commit shared config, ignore local overrides
 !.mcp.json
 !.claude/
