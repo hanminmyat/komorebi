@@ -6,6 +6,8 @@ Families rarely lose photos. They lose the **context**, **meaning**, and **stori
 
 Komorebi turns family stories into living memory capsules — structured archives of voice recordings, photos, and the moments that made them matter.
 
+![Landing page desktop](public/landing-desktop.png)
+
 ---
 
 ## How it works
