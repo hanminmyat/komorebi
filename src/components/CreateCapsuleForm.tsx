@@ -118,15 +118,15 @@ export default function CreateCapsuleForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
       {error && (
-        <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-600">
+        <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-sm text-red-600 sm:p-4">
           {error}
         </div>
       )}
 
       {/* Step 1: When did the memory happen? */}
-      <div className="rounded-2xl border border-border bg-surface p-6">
+      <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <svg
@@ -170,7 +170,7 @@ export default function CreateCapsuleForm() {
                   <line x1="12" x2="12" y1="16" y2="12" />
                   <line x1="12" x2="12.01" y1="8" y2="8" />
                 </svg>
-                Tap the calendar icon to pick a date, or skip below
+                Pick a date, or skip if you don&apos;t remember
               </p>
             )}
           </div>
@@ -192,7 +192,7 @@ export default function CreateCapsuleForm() {
       </div>
 
       {/* Step 2: What's the memory? */}
-      <div className="rounded-2xl border border-border bg-surface p-6">
+      <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary/10 text-secondary">
             <svg
@@ -256,7 +256,7 @@ export default function CreateCapsuleForm() {
       </div>
 
       {/* Step 3: What kind of memory? */}
-      <div className="rounded-2xl border border-border bg-surface p-6">
+      <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/20 text-primary">
             <svg
@@ -282,29 +282,29 @@ export default function CreateCapsuleForm() {
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {typeOptions.map((option) => (
             <button
               key={option.value}
               type="button"
               onClick={() => setType(option.value)}
-              className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all ${
+              className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 transition-all sm:gap-2 sm:p-4 ${
                 type === option.value
                   ? "border-primary bg-primary/5 shadow-md shadow-primary/10"
                   : "border-border hover:border-primary/30 hover:bg-surface"
               }`}
             >
               <div
-                className={
+                className={`${
                   type === option.value
                     ? "text-primary"
                     : "text-muted"
-                }
+                } [&>svg]:h-6 [&>svg]:w-6 sm:[&>svg]:h-7 sm:[&>svg]:w-7`}
               >
                 {option.icon}
               </div>
               <span
-                className={`text-sm font-medium ${
+                className={`text-xs font-medium sm:text-sm ${
                   type === option.value
                     ? "text-primary"
                     : "text-foreground"
@@ -312,7 +312,7 @@ export default function CreateCapsuleForm() {
               >
                 {option.label}
               </span>
-              <span className="text-xs text-muted">{option.description}</span>
+              <span className="hidden text-xs text-muted sm:block">{option.description}</span>
             </button>
           ))}
         </div>

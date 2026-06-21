@@ -24,7 +24,11 @@ export default function MediaAlbum({ items, capsuleId }: MediaAlbumProps) {
   const router = useRouter();
 
   const handleDelete = async (item: MediaItem) => {
-    if (!confirm("Remove this from the album?")) return;
+    const message =
+      item.type === "audio"
+        ? "Remove this recording? You can only have 1 audio per capsule."
+        : "Remove this photo from the album?";
+    if (!confirm(message)) return;
 
     setDeleting(item.id);
 
@@ -84,7 +88,7 @@ export default function MediaAlbum({ items, capsuleId }: MediaAlbumProps) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={item.url}
-                  alt="Memory"
+                  alt="Capsule photo"
                   className="w-full rounded-sm object-cover"
                   loading="lazy"
                 />
@@ -94,6 +98,7 @@ export default function MediaAlbum({ items, capsuleId }: MediaAlbumProps) {
               <button
                 onClick={() => handleDelete(item)}
                 disabled={isDeleting}
+                aria-label="Remove photo from album"
                 className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-muted opacity-0 shadow backdrop-blur-sm transition-all hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
               >
                 <svg
@@ -154,6 +159,7 @@ export default function MediaAlbum({ items, capsuleId }: MediaAlbumProps) {
             <button
               onClick={() => handleDelete(item)}
               disabled={isDeleting}
+              aria-label="Remove audio from album"
               className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-muted opacity-0 shadow backdrop-blur-sm transition-all hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
             >
               <svg

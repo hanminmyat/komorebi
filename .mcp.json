@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["@anthropic-ai/mcp-server-playwright@latest"]
+    },
+    "magic": {
+      "command": "npx",
+      "args": ["@anthropic-ai/mcp-server-magic@latest"],
+      "env": {
+        "MAGIC_API_KEY": "${MAGIC_API_KEY}"
+      }
+    }
+  }
+}

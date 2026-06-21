@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import Logo from "@/components/Logo";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -15,41 +16,18 @@ export default async function Home() {
   return (
     <div className="min-h-screen">
       {/* Navigation */}
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-        <div className="flex items-center gap-2">
-          <svg
-            width="28"
-            height="28"
-            viewBox="0 0 28 28"
-            fill="none"
-            className="text-primary"
-          >
-            <circle cx="14" cy="14" r="12" stroke="currentColor" strokeWidth="2" />
-            <path
-              d="M14 6C14 6 8 12 8 16C8 19.3 10.7 22 14 22C17.3 22 20 19.3 20 16C20 12 14 6 14 6Z"
-              fill="currentColor"
-              opacity="0.3"
-            />
-            <path
-              d="M14 8C14 8 10 13 10 16C10 18.2 11.8 20 14 20C16.2 20 18 18.2 18 16C18 13 14 8 14 8Z"
-              fill="currentColor"
-              opacity="0.6"
-            />
-          </svg>
-          <span className="text-xl font-semibold tracking-tight">
-            Komorebi
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
+      <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 sm:py-5">
+        <Logo size="sm" href="/" />
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/login"
-            className="rounded-lg px-4 py-2 text-sm font-medium text-muted transition-colors hover:text-foreground"
+            className="rounded-lg px-3 py-2 text-xs font-medium text-muted transition-colors hover:text-foreground sm:px-4 sm:text-sm"
           >
             Sign in
           </Link>
           <Link
             href="/signup"
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover"
+            className="rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-primary-hover sm:px-4 sm:text-sm"
           >
             Get Started
           </Link>
@@ -57,25 +35,25 @@ export default async function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="mx-auto max-w-6xl px-6 pb-20 pt-24 text-center md:pt-32">
+      <section className="mx-auto max-w-6xl px-4 pb-16 pt-16 text-center sm:px-6 sm:pb-20 md:pt-32">
         <div className="mx-auto max-w-3xl">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-1.5 text-sm text-muted">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-xs text-muted sm:mb-6 sm:px-4 sm:text-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-secondary"></span>
             Preserve what matters most
           </div>
-          <h1 className="text-4xl font-bold leading-tight tracking-tight md:text-6xl">
+          <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-4xl md:text-6xl">
             Turn family stories into{" "}
             <span className="text-primary">living memories</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted md:text-xl">
+          <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-muted sm:mt-6 sm:text-lg md:text-xl">
             Komorebi helps you capture the stories behind photos, the voices
             behind traditions, and the meaning behind moments — before they
             fade away.
           </p>
-          <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+          <div className="mt-8 flex flex-col items-center gap-3 sm:mt-10 sm:flex-row sm:justify-center sm:gap-4">
             <Link
               href="/signup"
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary-hover hover:shadow-xl hover:shadow-primary/30"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary-hover hover:shadow-xl hover:shadow-primary/30 sm:w-auto sm:px-8 sm:py-3.5 sm:text-base"
             >
               Start preserving memories
               <svg
@@ -93,7 +71,7 @@ export default async function Home() {
             </Link>
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 rounded-xl border border-border px-8 py-3.5 text-base font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-surface"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border px-6 py-3 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-surface sm:w-auto sm:px-8 sm:py-3.5 sm:text-base"
             >
               Sign in to your capsules
             </Link>
@@ -101,32 +79,32 @@ export default async function Home() {
         </div>
 
         {/* Decorative visual */}
-        <div className="relative mx-auto mt-20 max-w-2xl">
+        <div className="relative mx-auto mt-12 max-w-2xl sm:mt-20">
           <div className="rounded-2xl border border-border bg-surface p-1 shadow-2xl shadow-primary/5">
-            <div className="rounded-xl bg-background p-6">
-              <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+            <div className="rounded-xl bg-background p-4 sm:p-6">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 sm:h-12 sm:w-12">
                   <svg
-                    width="24"
-                    height="24"
+                    width="20"
+                    height="20"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="1.5"
-                    className="text-primary"
+                    className="text-primary sm:w-6 sm:h-6"
                   >
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
                     <path d="M12 6v6l4 2" strokeLinecap="round" />
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-medium text-foreground">
+                  <p className="text-sm font-medium text-foreground sm:text-base">
                     Summer at Grandma&apos;s House
                   </p>
-                  <p className="mt-1 text-sm text-muted">
-                    Audio recording · 4 photos · Created 2 days ago
+                  <p className="mt-1 text-xs text-muted sm:text-sm">
+                    Audio recording · Created 2 days ago
                   </p>
-                  <div className="mt-3 flex gap-2">
+                  <div className="mt-2 flex gap-2 sm:mt-3">
                     <span className="rounded-md bg-secondary/10 px-2 py-0.5 text-xs font-medium text-secondary">
                       Audio
                     </span>
@@ -144,18 +122,18 @@ export default async function Home() {
       </section>
 
       {/* How It Works */}
-      <section className="border-t border-border bg-surface/50 py-24">
-        <div className="mx-auto max-w-6xl px-6">
+      <section className="border-t border-border bg-surface/50 py-16 sm:py-24">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="text-center">
-            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
               Memories in three simple steps
             </h2>
-            <p className="mt-4 text-lg text-muted">
+            <p className="mt-3 text-base text-muted sm:mt-4 sm:text-lg">
               No complicated setup. Just press record and start talking.
             </p>
           </div>
 
-          <div className="mt-16 grid gap-8 md:grid-cols-3">
+          <div className="mt-10 grid gap-6 sm:mt-16 sm:gap-8 md:grid-cols-3">
             {/* Step 1 */}
             <div className="group relative rounded-2xl border border-border bg-background p-8 transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
               <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
@@ -242,18 +220,18 @@ export default async function Home() {
       </section>
 
       {/* Capsule Types */}
-      <section className="py-24">
-        <div className="mx-auto max-w-6xl px-6">
+      <section className="py-16 sm:py-24">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="text-center">
-            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
               Every memory is unique
             </h2>
-            <p className="mt-4 text-lg text-muted">
+            <p className="mt-3 text-base text-muted sm:mt-4 sm:text-lg">
               Choose the format that fits the story you want to preserve.
             </p>
           </div>
 
-          <div className="mt-16 grid gap-6 md:grid-cols-3">
+          <div className="mt-10 grid gap-4 sm:mt-16 sm:gap-6 md:grid-cols-3">
             {/* Audio Capsule */}
             <div className="group rounded-2xl border border-border bg-surface p-8 transition-all hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5">
               <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
@@ -382,17 +360,17 @@ export default async function Home() {
       </section>
 
       {/* Emotional CTA */}
-      <section className="border-t border-border bg-surface/50 py-24">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <div className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+      <section className="border-t border-border bg-surface/50 py-16 sm:py-24">
+        <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
+          <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 sm:mb-8 sm:h-16 sm:w-16">
             <svg
-              width="32"
-              height="32"
+              width="28"
+              height="28"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="1.5"
-              className="text-primary"
+              className="text-primary sm:w-8 sm:h-8"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
@@ -400,18 +378,18 @@ export default async function Home() {
               <path d="m15 5 4 4" />
             </svg>
           </div>
-          <blockquote className="text-2xl font-medium leading-relaxed text-foreground md:text-3xl">
+          <blockquote className="text-xl font-medium leading-relaxed text-foreground sm:text-2xl md:text-3xl">
             &ldquo;Families rarely lose photos. They lose the stories behind
             them.&rdquo;
           </blockquote>
-          <p className="mx-auto mt-6 max-w-lg text-lg text-muted">
+          <p className="mx-auto mt-4 max-w-lg text-base text-muted sm:mt-6 sm:text-lg">
             Every family has stories worth keeping. The question isn&apos;t
             whether to preserve them — it&apos;s whether to start today or wish
             you had.
           </p>
           <Link
             href="/signup"
-            className="mt-10 inline-flex items-center gap-2 rounded-xl bg-primary px-10 py-4 text-lg font-semibold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary-hover hover:shadow-xl hover:shadow-primary/30"
+            className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary-hover hover:shadow-xl hover:shadow-primary/30 sm:mt-10 sm:w-auto sm:px-10 sm:py-4 sm:text-lg"
           >
             Create your first memory capsule
           </Link>
@@ -419,28 +397,15 @@ export default async function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border py-10">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-6 sm:flex-row sm:justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 28 28"
-              fill="none"
-              className="text-primary"
-            >
-              <circle cx="14" cy="14" r="12" stroke="currentColor" strokeWidth="2" />
-              <path
-                d="M14 8C14 8 10 13 10 16C10 18.2 11.8 20 14 20C16.2 20 18 18.2 18 16C18 13 14 8 14 8Z"
-                fill="currentColor"
-                opacity="0.5"
-              />
-            </svg>
+      <footer className="border-t border-border py-8 sm:py-10">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 sm:flex-row sm:justify-between sm:gap-4 sm:px-6">
+          <div className="flex items-center gap-2 text-xs text-muted sm:text-sm">
+            <Logo size="sm" href="/" showText={false} />
             <span>Komorebi</span>
             <span className="text-border">·</span>
-            <span>Turn family stories into living memories</span>
+            <span className="hidden sm:inline">Turn family stories into living memories</span>
           </div>
-          <p className="text-sm text-muted">
+          <p className="text-xs text-muted sm:text-sm">
             &copy; {new Date().getFullYear()} Komorebi. Made with care.
           </p>
         </div>
