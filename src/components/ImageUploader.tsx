@@ -4,17 +4,20 @@ import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
+const MAX_IMAGES = 10;
+
 interface ImageUploaderProps {
   capsuleId: string;
-  currentMediaCount: number;
+  imageCount: number;
 }
 
 export default function ImageUploader({
   capsuleId,
-  currentMediaCount,
+  imageCount,
 }: ImageUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const supabase = createClient();
@@ -26,34 +29,38 @@ export default function ImageUploader({
       const img = new Image();
 
       img.onload = () => {
-        const maxSize = 1200;
-        let width = img.width;
-        let height = img.height;
+        // Medium quality: max dimension 1600px preserves detail for most display sizes
+        const maxSize = 1600;
+        let { width, height } = img;
 
         if (width > maxSize || height > maxSize) {
           if (width > height) {
-            height = (height * maxSize) / width;
+            height = Math.round((height * maxSize) / width);
             width = maxSize;
           } else {
-            width = (width * maxSize) / height;
+            width = Math.round((width * maxSize) / height);
             height = maxSize;
           }
         }
 
         canvas.width = width;
         canvas.height = height;
-        ctx?.drawImage(img, 0, 0, width, height);
 
+        // Use imageSmoothingQuality for better downscaling
+        if (ctx) {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
+          ctx.drawImage(img, 0, 0, width, height);
+        }
+
+        // 0.85 quality = medium-high, good balance of size vs quality
         canvas.toBlob(
           (blob) => {
-            if (blob) {
-              resolve(blob);
-            } else {
-              reject(new Error("Compression failed"));
-            }
+            if (blob) resolve(blob);
+            else reject(new Error("Compression failed"));
           },
           "image/jpeg",
-          0.8
+          0.85
         );
       };
 
@@ -62,16 +69,19 @@ export default function ImageUploader({
     });
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const remainingSlots = 10 - currentMediaCount;
+  const uploadFiles = async (files: FileList | File[]) => {
+    const remainingSlots = MAX_IMAGES - imageCount;
     const filesToUpload = Array.from(files).slice(0, remainingSlots);
 
     if (filesToUpload.length < files.length) {
-      setError(`Only ${remainingSlots} slots remaining. Some files were skipped.`);
+      setError(
+        `Only ${remainingSlots} image slot${
+          remainingSlots !== 1 ? "s" : ""
+        } remaining. Some files were skipped.`
+      );
     }
+
+    if (filesToUpload.length === 0) return;
 
     setUploading(true);
     setError(null);
@@ -80,7 +90,6 @@ export default function ImageUploader({
       const {
         data: { user },
       } = await supabase.auth.getUser();
-
       if (!user) throw new Error("Not authenticated");
 
       for (let i = 0; i < filesToUpload.length; i++) {
@@ -91,7 +100,6 @@ export default function ImageUploader({
         const { error: uploadError } = await supabase.storage
           .from("images")
           .upload(fileName, compressed);
-
         if (uploadError) throw uploadError;
 
         const {
@@ -104,14 +112,9 @@ export default function ImageUploader({
             capsule_id: capsuleId,
             type: "image",
             url: publicUrl,
-            order_index: currentMediaCount + i,
+            order_index: imageCount + i,
           });
-
         if (insertError) throw insertError;
-      }
-
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
       }
 
       router.refresh();
@@ -119,39 +122,104 @@ export default function ImageUploader({
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setUploading(false);
+      setDragOver(false);
     }
   };
 
-  return (
-    <div className="rounded-lg border p-4">
-      <h3 className="mb-3 font-semibold">Upload Images</h3>
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    if (e.dataTransfer.files.length > 0) {
+      uploadFiles(e.dataTransfer.files);
+    }
+  };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = () => setDragOver(false);
+
+  if (imageCount >= MAX_IMAGES) {
+    return (
+      <div className="rounded-xl border border-border bg-surface p-6 text-center">
+        <div className="mb-2 flex justify-center">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted">
+            <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+            <circle cx="9" cy="9" r="2" />
+            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+          </svg>
+        </div>
+        <p className="text-sm text-muted">Image album is full ({MAX_IMAGES}/{MAX_IMAGES})</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
       {error && (
-        <div className="mb-3 rounded-md bg-red-50 p-2 text-sm text-red-600">
+        <div className="mb-3 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-600">
           {error}
         </div>
       )}
 
-      <div className="flex flex-col items-center gap-4">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handleUpload}
-          disabled={uploading}
-          className="hidden"
-        />
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
-          className="rounded-md border px-4 py-2 text-sm hover:bg-gray-50 disabled:opacity-50"
-        >
-          {uploading ? "Uploading..." : "Select Images"}
-        </button>
-        <p className="text-xs text-gray-500">
-          Max 10 images per capsule. Images are compressed automatically.
-        </p>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={(e) => {
+          if (e.target.files) uploadFiles(e.target.files);
+        }}
+        disabled={uploading}
+        className="absolute h-0 w-0 opacity-0"
+        aria-hidden="true"
+        tabIndex={-1}
+      />
+
+      <div
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onClick={() => fileInputRef.current?.click()}
+        className={`cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition-all ${
+          dragOver
+            ? "border-primary bg-primary/5"
+            : "border-border hover:border-primary/40 hover:bg-surface"
+        } ${uploading ? "pointer-events-none opacity-60" : ""}`}
+      >
+        {uploading ? (
+          <div className="flex flex-col items-center gap-2">
+            <svg
+              className="h-8 w-8 animate-spin text-primary"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.2" />
+              <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+            </svg>
+            <p className="text-sm text-muted">Adding to album...</p>
+          </div>
+        ) : (
+          <>
+            <div className="mb-3 flex justify-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary/10 text-secondary">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                  <circle cx="9" cy="9" r="2" />
+                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                </svg>
+              </div>
+            </div>
+            <p className="text-sm font-medium text-foreground">
+              Drop photos here or click to browse
+            </p>
+            <p className="mt-1 text-xs text-muted">
+              Medium quality · {MAX_IMAGES - imageCount} of {MAX_IMAGES} slots left
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

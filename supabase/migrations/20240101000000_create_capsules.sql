@@ -60,3 +60,7 @@ create policy "Users can delete own media items"
       select id from capsules where user_id = auth.uid()
     )
   );
+
+grant usage on schema public to authenticated;
+grant all on capsules to authenticated;
+grant all on media_items to authenticated;

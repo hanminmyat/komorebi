@@ -1,17 +1,21 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
+const MAX_AUDIO = 1;
+const MIN_SECONDS = 30; // 30 seconds
+const MAX_SECONDS = 180; // 3 minutes
+
 interface AudioRecorderProps {
   capsuleId: string;
-  currentMediaCount: number;
+  audioCount: number;
 }
 
 export default function AudioRecorder({
   capsuleId,
-  currentMediaCount,
+  audioCount,
 }: AudioRecorderProps) {
   const [recording, setRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -22,12 +26,35 @@ export default function AudioRecorder({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const router = useRouter();
   const supabase = createClient();
+
+  // Auto-stop when max time reached
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
+    setRecording(false);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  // Watch elapsed time for auto-stop
+  useEffect(() => {
+    if (recording && elapsed >= MAX_SECONDS) {
+      stopRecording();
+    }
+  }, [elapsed, recording, stopRecording]);
 
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
     };
   }, []);
 
@@ -38,46 +65,59 @@ export default function AudioRecorder({
     setElapsed(0);
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      // Request audio with reasonable quality
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          sampleRate: 44100,
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+        },
+      });
+      streamRef.current = stream;
+
+      // Prefer mp3/webm with decent bitrate for voice
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/webm")
+          ? "audio/webm"
+          : "audio/mp4";
+
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType,
+        audioBitsPerSecond: 96000, // 96kbps is good for voice, keeps files reasonable
+      });
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
       mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          chunksRef.current.push(e.data);
-        }
+        if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        const mime = mediaRecorder.mimeType || "audio/webm";
+        const blob = new Blob(chunksRef.current, { type: mime });
         setAudioBlob(blob);
         setAudioUrl(URL.createObjectURL(blob));
-        stream.getTracks().forEach((track) => track.stop());
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((track) => track.stop());
+          streamRef.current = null;
+        }
       };
 
-      mediaRecorder.start();
+      mediaRecorder.start(1000); // 1-second timeslices
       setRecording(true);
 
       timerRef.current = setInterval(() => {
         setElapsed((prev) => prev + 1);
       }, 1000);
     } catch {
-      setError("Microphone access denied");
+      setError("Microphone access denied. Please allow microphone permissions.");
     }
   };
 
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && recording) {
-      mediaRecorderRef.current.stop();
-      setRecording(false);
-      if (timerRef.current) clearInterval(timerRef.current);
-    }
-  };
-
-  const uploadAudio = async () => {
+  const handleUpload = async () => {
     if (!audioBlob) return;
-
     setUploading(true);
     setError(null);
 
@@ -85,15 +125,16 @@ export default function AudioRecorder({
       const {
         data: { user },
       } = await supabase.auth.getUser();
-
       if (!user) throw new Error("Not authenticated");
 
-      const fileName = `${user.id}/${capsuleId}/${Date.now()}.webm`;
+      const ext = audioBlob.type.includes("mp4") ? "m4a" : "webm";
+      const fileName = `${user.id}/${capsuleId}/${Date.now()}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from("audio")
-        .upload(fileName, audioBlob);
-
+        .upload(fileName, audioBlob, {
+          contentType: audioBlob.type || "audio/webm",
+        });
       if (uploadError) throw uploadError;
 
       const {
@@ -106,9 +147,8 @@ export default function AudioRecorder({
           capsule_id: capsuleId,
           type: "audio",
           url: publicUrl,
-          order_index: currentMediaCount,
+          order_index: audioCount,
         });
-
       if (insertError) throw insertError;
 
       setAudioBlob(null);
@@ -122,86 +162,128 @@ export default function AudioRecorder({
     }
   };
 
+  const handleDiscard = () => {
+    setAudioBlob(null);
+    setAudioUrl(null);
+    setElapsed(0);
+  };
+
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
-  return (
-    <div className="rounded-lg border p-4">
-      <h3 className="mb-3 font-semibold">Record Audio</h3>
+  // Already has an audio recording
+  if (audioCount >= MAX_AUDIO) {
+    return (
+      <div className="rounded-xl border border-border bg-surface p-6 text-center">
+        <div className="mb-2 flex justify-center">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+            <line x1="12" x2="12" y1="19" y2="22" />
+          </svg>
+        </div>
+        <p className="text-sm text-muted">Recording already saved</p>
+        <p className="mt-1 text-xs text-muted">Delete the existing recording to add a new one</p>
+      </div>
+    );
+  }
 
+  return (
+    <div>
       {error && (
-        <div className="mb-3 rounded-md bg-red-50 p-2 text-sm text-red-600">
+        <div className="mb-3 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-600">
           {error}
         </div>
       )}
 
-      <div className="flex flex-col items-center gap-4">
-        {recording ? (
-          <>
-            <div className="text-3xl font-mono text-red-600">
-              {formatTime(elapsed)}
-            </div>
+      {recording ? (
+        <div className="rounded-xl border-2 border-red-300 bg-red-50/50 p-6 text-center">
+          <div className="mb-3 flex justify-center">
+            <div className="h-3 w-3 animate-pulse rounded-full bg-red-600" />
+          </div>
+          <div className={`mb-3 font-mono font-medium text-3xl ${
+            elapsed >= MAX_SECONDS - 10 ? "text-red-600 animate-pulse" : "text-red-600"
+          }`}>
+            {formatTime(elapsed)}
+            <span className="text-sm text-muted ml-1">/ {formatTime(MAX_SECONDS)}</span>
+          </div>
+          {elapsed < MIN_SECONDS && (
+            <p className="mb-3 text-xs text-muted">
+              Minimum {formatTime(MIN_SECONDS)} required
+            </p>
+          )}
+          <div className="flex items-center justify-center gap-3">
             <button
               onClick={stopRecording}
-              className="rounded-full bg-red-600 p-4 text-white hover:bg-red-700"
+              className="inline-flex items-center gap-2 rounded-full bg-red-600 px-6 py-3 text-sm font-medium text-white shadow-lg shadow-red-200 transition-all hover:bg-red-700"
             >
-              <svg
-                className="h-6 w-6"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <rect x="6" y="6" width="12" height="12" />
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                <rect x="6" y="6" width="12" height="12" rx="1" />
               </svg>
+              {elapsed < MIN_SECONDS ? "Cancel" : "Stop Recording"}
             </button>
-            <p className="text-sm text-gray-600">Recording...</p>
-          </>
-        ) : audioUrl ? (
-          <>
-            <audio controls src={audioUrl} className="w-full" />
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setAudioBlob(null);
-                  setAudioUrl(null);
-                  setElapsed(0);
-                }}
-                className="rounded-md border px-4 py-2 text-sm hover:bg-gray-50"
-              >
-                Discard
-              </button>
-              <button
-                onClick={uploadAudio}
-                disabled={uploading}
-                className="rounded-md bg-black px-4 py-2 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
-              >
-                {uploading ? "Uploading..." : "Save Recording"}
-              </button>
+          </div>
+        </div>
+      ) : audioUrl ? (
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/20 text-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" x2="12" y1="19" y2="22" />
+              </svg>
             </div>
-          </>
-        ) : (
-          <button
-            onClick={startRecording}
-            className="rounded-full bg-black p-4 text-white hover:bg-gray-800"
-          >
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground">Preview</p>
+              <p className="text-xs text-muted">
+                {formatTime(elapsed)}
+                {elapsed < MIN_SECONDS && (
+                  <span className="text-red-500 ml-2">Too short (min {formatTime(MIN_SECONDS)})</span>
+                )}
+              </p>
+            </div>
+          </div>
+          <audio controls src={audioUrl} className="w-full mb-3" />
+          <div className="flex gap-3">
+            <button
+              onClick={handleDiscard}
+              className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted transition-colors hover:bg-surface hover:text-foreground"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-              />
+              Discard
+            </button>
+            <button
+              onClick={handleUpload}
+              disabled={uploading || elapsed < MIN_SECONDS}
+              className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-md shadow-primary/20 transition-all hover:bg-primary-hover disabled:opacity-50"
+            >
+              {uploading ? "Saving..." : "Save to Album"}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={startRecording}
+          className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border p-6 text-center transition-all hover:border-primary/40 hover:bg-surface"
+        >
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+              <line x1="12" x2="12" y1="19" y2="22" />
             </svg>
-          </button>
-        )}
-      </div>
+          </div>
+          <div className="text-left">
+            <p className="text-sm font-medium text-foreground">Record a voice memory</p>
+            <p className="text-xs text-muted">
+              1–3 minutes · 96kbps voice quality · 1 recording per capsule
+            </p>
+          </div>
+        </button>
+      )}
     </div>
   );
 }
