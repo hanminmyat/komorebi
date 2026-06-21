@@ -4,6 +4,7 @@ import Link from "next/link";
 import LogoutButton from "@/components/LogoutButton";
 import DeleteCapsuleButton from "@/components/DeleteCapsuleButton";
 import AudioRecorder from "@/components/AudioRecorder";
+import ImageUploader from "@/components/ImageUploader";
 import MediaItemActions from "@/components/MediaItemActions";
 
 export default async function CapsuleDetailPage({
@@ -41,6 +42,8 @@ export default async function CapsuleDetailPage({
   const canAddMedia = (mediaItems?.length || 0) < 10;
   const showAudioRecorder =
     canAddMedia && (capsule.type === "audio" || capsule.type === "mixed");
+  const showImageUploader =
+    canAddMedia && (capsule.type === "photo" || capsule.type === "mixed");
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -90,6 +93,15 @@ export default async function CapsuleDetailPage({
           </div>
         )}
 
+        {showImageUploader && (
+          <div className="mb-6">
+            <ImageUploader
+              capsuleId={capsule.id}
+              currentMediaCount={mediaItems?.length || 0}
+            />
+          </div>
+        )}
+
         <div className="rounded-lg border p-6">
           <h2 className="mb-4 font-semibold">
             Media ({mediaItems?.length || 0}/10)
@@ -123,6 +135,7 @@ export default async function CapsuleDetailPage({
                   <MediaItemActions
                     itemId={item.id}
                     capsuleId={capsule.id}
+                    mediaType={item.type}
                     storagePath={item.url.split("/").slice(-3).join("/")}
                   />
                 </div>

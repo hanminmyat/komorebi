@@ -7,11 +7,13 @@ import { useRouter } from "next/navigation";
 interface MediaItemActionsProps {
   itemId: string;
   capsuleId: string;
+  mediaType: "audio" | "image";
   storagePath: string;
 }
 
 export default function MediaItemActions({
   itemId,
+  mediaType,
   storagePath,
 }: MediaItemActionsProps) {
   const [loading, setLoading] = useState(false);
@@ -23,7 +25,8 @@ export default function MediaItemActions({
 
     setLoading(true);
 
-    await supabase.storage.from("audio").remove([storagePath]);
+    const bucket = mediaType === "audio" ? "audio" : "images";
+    await supabase.storage.from(bucket).remove([storagePath]);
     await supabase.from("media_items").delete().eq("id", itemId);
 
     router.refresh();
