@@ -2,12 +2,12 @@
 ALTER TABLE capsules ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT false;
 ALTER TABLE capsules ADD COLUMN IF NOT EXISTS share_token TEXT UNIQUE;
 
--- Generate share tokens for existing capsules
-UPDATE capsules SET share_token = encode(gen_random_bytes(8), 'hex') WHERE share_token IS NULL;
+-- Generate share tokens for existing capsules (uses built-in gen_random_uuid, no extensions needed)
+UPDATE capsules SET share_token = substr(replace(gen_random_uuid()::text, '-', ''), 1, 16) WHERE share_token IS NULL;
 
 -- Make share_token NOT NULL after backfilling
 ALTER TABLE capsules ALTER COLUMN share_token SET NOT NULL;
-ALTER TABLE capsules ALTER COLUMN share_token SET DEFAULT encode(gen_random_bytes(8), 'hex');
+ALTER TABLE capsules ALTER COLUMN share_token SET DEFAULT substr(replace(gen_random_uuid()::text, '-', ''), 1, 16);
 
 -- Index for fast lookups
 CREATE INDEX IF NOT EXISTS idx_capsules_share_token ON capsules(share_token);
