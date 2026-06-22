@@ -17,6 +17,18 @@
     "mcp__playwright__*",
     "mcp__magic__*"
   ],
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "playwright",
+    "magic"
+  ],
   "agents": {
     "general": {
       "description": "Default agent for code generation, multi-step tasks, and general work",
