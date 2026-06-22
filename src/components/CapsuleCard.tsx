@@ -7,6 +7,8 @@ export interface Capsule {
   type: "audio" | "photo" | "mixed";
   created_at: string;
   memory_date: string | null;
+  is_public?: boolean;
+  share_token?: string;
 }
 
 const typeConfig = {
@@ -47,11 +49,21 @@ export default function CapsuleCard({ capsule }: { capsule: Capsule }) {
         <h3 className="text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary sm:text-base">
           {capsule.title}
         </h3>
-        <span
-          className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-medium ${config.bg} ${config.text} sm:px-2.5`}
-        >
-          {config.label}
-        </span>
+        <div className="flex items-center gap-1.5">
+          {capsule.is_public && (
+            <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary" title="Public">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </span>
+          )}
+          <span
+            className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-medium ${config.bg} ${config.text} sm:px-2.5`}
+          >
+            {config.label}
+          </span>
+        </div>
       </div>
 
       {capsule.description && (

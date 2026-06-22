@@ -2,9 +2,7 @@
 
 > 木漏れ日 — Sunlight filtering through leaves.
 
-Families rarely lose photos. They lose the **context**, **meaning**, and **stories** behind them.
-
-Komorebi turns family stories into living memory capsules — structured archives of voice recordings, photos, and the moments that made them matter.
+Turn family stories into living memory capsules — structured archives of voice recordings, photos, and the moments that made them matter.
 
 ![Landing page desktop](public/landing-desktop.png)
 
@@ -12,95 +10,43 @@ Komorebi turns family stories into living memory capsules — structured archive
 
 ## How it works
 
-```
-┌──────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│  Landing     │────▶│  Dashboard       │────▶│  Create capsule  │
-│  page        │     │  (stats + grid)  │     │  (3-step wizard) │
-└──────────────┘     └──────────────────┘     └────────┬────────┘
-                                                       │
-                                                       ▼
-                                              ┌─────────────────┐
-                                              │  Album view      │
-                                              │  (media + play)  │
-                                              └─────────────────┘
-```
+**Create** → **Add media** → **Edit** → **Share**
 
-**The flow:**
-
-1. **Landing page** — learn about Komorebi, see capsule types (audio / photo / mixed)
-2. **Sign up** — create an account
-3. **Dashboard** — view stats (photos, recordings, capsules), see all capsules
-4. **Create a capsule** — 3-step wizard:
-   - **When?** — pick the memory date (or skip if unknown)
-   - **What?** — title + optional description (use memory prompts if stuck)
-   - **How?** — choose capsule type (audio / photo / mixed)
-5. **Album view** — scrapbook-style display with photo frames and audio cards
-6. **Add media** — record audio or upload photos (1 audio max, 10 photos max)
-7. **Done** — the capsule is preserved, structured, and ready to rediscover
+1. **Create a capsule** — 3-step wizard: pick a memory date, write a title, choose a type (audio / photo / mixed)
+2. **Add media** — record audio (30s–3min) or upload photos (up to 10) into a scrapbook-style album
+3. **Edit** — update title and description anytime
+4. **Share** — toggle public and get a shareable link — anyone with the link can view, no account needed
 
 ---
 
 ## Getting started
 
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) 18+
-- [Supabase CLI](https://supabase.com/docs/guides/cli)
-
-### 1. Clone and install
-
 ```bash
-git clone <repo-url>
-cd komorebi
-npm install
-```
+# 1. Clone and install
+git clone <repo-url> && cd komorebi && npm install
 
-### 2. Start the local backend
-
-```bash
+# 2. Start local Supabase
 supabase start
-```
 
-This runs Postgres + Auth locally and prints your API credentials.
-
-### 3. Configure environment
-
-```bash
+# 3. Configure environment
 cp .env.example .env
-```
+# Fill in NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
+# from the supabase start output
 
-Fill in the values from the `supabase start` output:
+# 4. Disable email confirmation
+# In http://localhost:54323 → Authentication → Providers → Email → toggle OFF
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key-from-supabase-output>
-```
-
-### 4. Disable email confirmation
-
-In the local Supabase dashboard ([http://localhost:54323](http://localhost:54323)):
-
-1. Go to **Authentication → Providers → Email**
-2. Toggle OFF **"Confirm email"**
-
-This allows signup → auto-login during development without a mail provider.
-
-### 5. Run
-
-```bash
+# 5. Run
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
-### Scripts
-
 | Command | What it does |
 |---------|-------------|
-| `npm run dev` | Start dev server (hot reload) |
+| `npm run dev` | Dev server (hot reload) |
 | `npm run build` | Production build |
-| `npm run start` | Serve production build |
-| `npm run lint` | Run ESLint |
+| `npm run lint` | ESLint |
 
 ---
 
@@ -108,11 +54,9 @@ Open [http://localhost:3000](http://localhost:3000).
 
 | Layer | Technology |
 |-------|-----------|
-| Framework | Next.js 16 (App Router), React 19 |
-| Language | TypeScript |
-| Styling | Tailwind CSS v4 |
+| Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4 |
 | Backend | Supabase (Auth + Postgres + Storage) |
-| Audio | MediaRecorder API — Opus codec, 96kbps, mono |
+| Audio | MediaRecorder API — Opus, 96kbps, mono |
 | Images | Client-side compression (max 1600px, JPEG 0.85) |
 
 ---
@@ -122,45 +66,30 @@ Open [http://localhost:3000](http://localhost:3000).
 ```
 src/
 ├── app/
-│   ├── page.tsx                  # Landing page (hero, how-it-works, capsule types, CTA)
-│   ├── layout.tsx                # Root layout (fonts, metadata)
-│   ├── globals.css               # Design tokens, theme
-│   ├── dashboard/
-│   │   ├── page.tsx              # Stats row + capsule grid
-│   │   └── loading.tsx           # Skeleton loader
+│   ├── page.tsx                  # Landing page
+│   ├── dashboard/page.tsx        # Stats + capsule grid
 │   ├── capsules/
-│   │   ├── new/
-│   │   │   └── page.tsx          # Create capsule (3-step wizard)
-│   │   └── [id]/
-│   │       ├── page.tsx          # Album view (cover card + media album)
-│   │       └── loading.tsx       # Skeleton loader
+│   │   ├── new/page.tsx          # Create capsule (3-step wizard)
+│   │   └── [id]/page.tsx         # Album view + edit/share
+│   ├── share/[token]/
+│   │   ├── page.tsx              # Public read-only view (no auth)
+│   │   └── not-found.tsx         # Friendly "not found" page
 │   ├── login/page.tsx
 │   ├── signup/page.tsx
-│   ├── not-found.tsx
-│   └── auth/callback/route.ts    # OAuth code exchange
+│   └── profile/page.tsx
 ├── components/
-│   ├── Logo.tsx                  # Shared brand logo
-│   ├── CapsuleCard.tsx           # Dashboard capsule card
-│   ├── CreateCapsuleForm.tsx     # 3-step wizard: date → title → type
-│   ├── AudioRecorder.tsx         # Record → blob → upload pipeline
-│   ├── ImageUploader.tsx         # Drag-drop + client-side compression
-│   ├── MediaAlbum.tsx            # Masonry scrapbook (photo frames + audio cards)
-│   ├── MemoryPrompts.tsx         # 12 title inspiration prompts
-│   ├── DeleteCapsuleButton.tsx   # Confirm + delete
-│   ├── MediaList.tsx             # Ordered media list with drag handles
-│   └── LogoutButton.tsx
-├── lib/supabase/
-│   ├── client.ts                 # Browser client
-│   ├── server.ts                 # Server client
-│   └── middleware.ts             # Session refresh
-└── middleware.ts                  # Auth middleware
+│   ├── CreateCapsuleForm.tsx     # 3-step wizard
+│   ├── AudioRecorder.tsx         # Record → upload pipeline
+│   ├── AudioPlayer.tsx           # Custom player with seek + ARIA
+│   ├── ImageUploader.tsx         # Drag-drop + compression
+│   ├── MediaAlbum.tsx            # Polaroid-style masonry album
+│   ├── EditCapsuleModal.tsx      # Edit title/description
+│   ├── ShareButton.tsx           # Toggle public + copy link
+│   └── ...                       # Logo, CapsuleCard, DeleteButton, etc.
+├── lib/supabase/                 # Client, server, middleware
+└── middleware.ts                  # Auth (skips /share for anon)
 
-supabase/
-├── config.toml                   # Local Supabase config
-└── migrations/                   # Database schema
-    ├── ..._create_capsules.sql
-    ├── ..._create_storage_buckets.sql
-    └── ..._add_memory_date.sql
+supabase/migrations/              # 5 migrations (schema, storage, profiles, sharing)
 ```
 
 ---
@@ -168,75 +97,27 @@ supabase/
 ## Data model
 
 ```
-capsules
-├── id            uuid (PK)
-├── user_id       uuid (FK → auth.users)
-├── title         text
-├── description   text (nullable)
-├── type          text ('audio' | 'photo' | 'mixed')
-├── memory_date   date (nullable)
-└── created_at    timestamptz
-
-media_items
-├── id            uuid (PK)
-├── capsule_id    uuid (FK → capsules)
-├── type          text ('audio' | 'image')
-├── url           text (Supabase Storage public URL)
-└── order_index   integer
+capsules        → id, user_id, title, description, type, memory_date, is_public, share_token, created_at
+media_items     → id, capsule_id, type, url, order_index, created_at
+profiles        → id, full_name, avatar_url, created_at, updated_at
 ```
 
-**Rules:**
-- Each capsule: 1 audio max, 10 images max
-- Media items belong to a capsule only — no standalone browsing
-- Audio pipeline: Record → Blob → Upload → Storage → URL → Capsule → Playback
+- 1 audio + 10 photos max per capsule
+- Media belongs to a capsule only — no standalone browsing
+- Public capsules are readable by anonymous users via RLS
 
 ---
 
-## Design system
+## Design tokens
 
-The project uses a warm, organic color palette defined as CSS custom properties in `globals.css`.
+Warm, organic palette defined in `globals.css`. Use Tailwind tokens (`text-primary`, `bg-surface`) — never hardcoded colors.
 
-| Token | Light | Dark | Usage |
-|-------|-------|------|-------|
-| `--primary` | `#B8845C` | `#D4A07A` | CTAs, links, icons |
-| `--secondary` | `#D4956B` | `#D4A88C` | Supporting accents |
-| `--accent` | `#5B8C7A` | `#7BAF94` | Tertiary, audio theme |
-| `--surface` | `#F2EDE4` | `#1C211E` | Card backgrounds |
-| `--background` | `#FAF8F4` | `#141816` | Page background |
-| `--muted` | `#8C7E6E` | `#9A9488` | Secondary text |
-
-Use Tailwind tokens (`text-primary`, `bg-surface`, `border-border`) — never hardcoded `text-gray-*` or `bg-black`.
-
----
-
-## Development tools
-
-This project is configured for [Claude Code](https://claude.ai/code) with the following tools:
-
-### MCP Servers
-
-| Server | Purpose |
-|--------|---------|
-| **github** | Issues, PRs, code search, file operations |
-| **playwright** | Browser automation, screenshots, E2E testing |
-| **magic** | 21st.dev UI component search and generation |
-
-### Agents
-
-| Agent | Use for |
-|-------|---------|
-| General | Code generation, multi-step implementation |
-| Explore | Fast read-only codebase search |
-| code-reviewer | Structured review feedback |
-
-### Skills
-
-| Skill | Use for |
-|-------|---------|
-| markdown-creator | Creating READMEs, CHANGELOGs, ADRs, guides |
-| ui-ux-pro-max | UI component building and refinement |
-
-See [`AGENTS.md`](./AGENTS.md) for full reference.
+| Token | Light | Dark |
+|-------|-------|------|
+| `--primary` | `#B8845C` | `#D4A07A` |
+| `--surface` | `#F2EDE4` | `#1C211E` |
+| `--background` | `#FAF8F4` | `#141816` |
+| `--muted` | `#8C7E6E` | `#9A9488` |
 
 ---
 
@@ -245,9 +126,9 @@ See [`AGENTS.md`](./AGENTS.md) for full reference.
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase public anon key |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anon key |
 | `GITHUB_PAT` | No | GitHub token for MCP tools |
-| `MAGIC_API_KEY` | No | 21st.dev API key for magic MCP |
+| `MAGIC_API_KEY` | No | 21st.dev API key |
 
 ---
 

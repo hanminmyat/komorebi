@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import AudioPlayer from "./AudioPlayer";
 
 export interface MediaItem {
   id: string;
@@ -14,11 +15,22 @@ export interface MediaItem {
 interface MediaAlbumProps {
   items: MediaItem[];
   capsuleId: string;
+  readOnly?: boolean;
 }
 
-const ROTATIONS = ["-rotate-1", "rotate-1", "-rotate-[0.5deg]", "rotate-[0.5deg]", "rotate-[1.5deg]"];
+const ROTATIONS = [
+  "-rotate-1",
+  "rotate-[0.8deg]",
+  "-rotate-[0.5deg]",
+  "rotate-[1.2deg]",
+  "-rotate-[0.3deg]",
+];
 
-export default function MediaAlbum({ items, capsuleId }: MediaAlbumProps) {
+export default function MediaAlbum({
+  items,
+  capsuleId,
+  readOnly = false,
+}: MediaAlbumProps) {
   const [deleting, setDeleting] = useState<string | null>(null);
   const supabase = createClient();
   const router = useRouter();
@@ -33,7 +45,9 @@ export default function MediaAlbum({ items, capsuleId }: MediaAlbumProps) {
     setDeleting(item.id);
 
     const bucket = item.type === "audio" ? "audio" : "images";
-    const pathMatch = item.url.match(/\/storage\/v1\/object\/public\/(?:audio|images)\/(.+)$/);
+    const pathMatch = item.url.match(
+      /\/storage\/v1\/object\/public\/(?:audio|images)\/(.+)$/
+    );
     if (pathMatch) {
       await supabase.storage.from(bucket).remove([pathMatch[1]]);
     }
@@ -45,8 +59,8 @@ export default function MediaAlbum({ items, capsuleId }: MediaAlbumProps) {
 
   if (items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface border border-border">
+      <div className="flex flex-col items-center justify-center py-16 text-center sm:py-20">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-border bg-surface">
           <svg
             width="32"
             height="32"
@@ -61,7 +75,7 @@ export default function MediaAlbum({ items, capsuleId }: MediaAlbumProps) {
             <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
           </svg>
         </div>
-        <p className="text-muted font-medium">This album is empty</p>
+        <p className="font-medium text-muted">This album is empty</p>
         <p className="mt-1 text-sm text-muted">
           Add your first photo or recording below
         </p>
@@ -70,7 +84,7 @@ export default function MediaAlbum({ items, capsuleId }: MediaAlbumProps) {
   }
 
   return (
-    <div className="columns-1 gap-4 sm:columns-2 lg:columns-3">
+    <div className="columns-1 gap-5 sm:columns-2 lg:columns-3">
       {items.map((item, i) => {
         const rotation = ROTATIONS[i % ROTATIONS.length];
         const isDeleting = deleting === item.id;
@@ -79,27 +93,114 @@ export default function MediaAlbum({ items, capsuleId }: MediaAlbumProps) {
           return (
             <div
               key={item.id}
-              className={`group relative mb-4 break-inside-avoid ${rotation} transition-all duration-300 ${
-                isDeleting ? "opacity-30 scale-95" : "opacity-100"
+              className={`group relative mb-5 break-inside-avoid ${rotation} transition-all duration-300 ${
+                isDeleting ? "scale-95 opacity-30" : "opacity-100"
               }`}
             >
-              {/* Photo print frame */}
-              <div className="overflow-hidden rounded-sm bg-white p-2 shadow-lg shadow-black/10 ring-1 ring-black/5 transition-shadow hover:shadow-xl hover:shadow-black/15">
+              {/* Polaroid frame */}
+              <div className="relative overflow-hidden rounded-sm bg-white p-2.5 pb-8 shadow-md shadow-black/8 ring-1 ring-black/5 transition-shadow duration-300 hover:shadow-xl hover:shadow-black/12 dark:bg-[#F5F0E8] sm:p-3 sm:pb-10">
+                {/* Image */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={item.url}
                   alt="Capsule photo"
-                  className="w-full rounded-sm object-cover"
+                  className="w-full rounded-[2px] object-cover"
                   loading="lazy"
+                />
+
+                {/* Subtle warm overlay for cohesion */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 rounded-[2px] bg-gradient-to-b from-transparent via-transparent to-amber-900/[0.03]"
                 />
               </div>
 
+              {/* Decorative tape strip (top) */}
+              <div aria-hidden="true" className="pointer-events-none absolute -top-1.5 left-1/2 -translate-x-1/2">
+                <div className="h-4 w-10 rotate-1 rounded-[1px] bg-sunflower/30 shadow-sm backdrop-blur-[1px] sm:h-5 sm:w-12" />
+              </div>
+
               {/* Delete button */}
+              {!readOnly && (
+                <button
+                  onClick={() => handleDelete(item)}
+                  disabled={isDeleting}
+                  aria-label="Remove photo from album"
+                  className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-muted opacity-0 shadow-sm backdrop-blur-sm transition-all hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="18" x2="6" y1="6" y2="18" />
+                    <line x1="6" x2="18" y1="6" y2="18" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          );
+        }
+
+        // Audio item — styled as a warm note card
+        return (
+          <div
+            key={item.id}
+            className={`group relative mb-5 break-inside-avoid ${rotation} transition-all duration-300 ${
+              isDeleting ? "scale-95 opacity-30" : "opacity-100"
+            }`}
+          >
+            <div className="rounded-sm bg-surface p-5 shadow-md shadow-black/5 ring-1 ring-black/5 transition-shadow duration-300 hover:shadow-lg hover:shadow-black/8 sm:p-6">
+              {/* Header with icon */}
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="text-primary"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                    <line x1="12" x2="12" y1="19" y2="22" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Voice Recording
+                  </p>
+                  <p className="text-xs text-muted">
+                    {readOnly ? "Shared memory" : "In this album"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Custom audio player */}
+              <AudioPlayer src={item.url} />
+            </div>
+
+            {/* Decorative pin */}
+            <div aria-hidden="true" className="pointer-events-none absolute -top-2 left-1/2 -translate-x-1/2">
+              <div className="h-4 w-4 rounded-full bg-blossom/60 shadow-sm ring-2 ring-blossom/30" />
+            </div>
+
+            {/* Delete button */}
+            {!readOnly && (
               <button
                 onClick={() => handleDelete(item)}
                 disabled={isDeleting}
-                aria-label="Remove photo from album"
-                className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-muted opacity-0 shadow backdrop-blur-sm transition-all hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
+                aria-label="Remove audio from album"
+                className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-muted opacity-0 shadow-sm backdrop-blur-sm transition-all hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
               >
                 <svg
                   width="14"
@@ -115,67 +216,7 @@ export default function MediaAlbum({ items, capsuleId }: MediaAlbumProps) {
                   <line x1="6" x2="18" y1="6" y2="18" />
                 </svg>
               </button>
-            </div>
-          );
-        }
-
-        // Audio item — styled as a note card
-        return (
-          <div
-            key={item.id}
-            className={`group relative mb-4 break-inside-avoid ${rotation} transition-all duration-300 ${
-              isDeleting ? "opacity-30 scale-95" : "opacity-100"
-            }`}
-          >
-            <div className="rounded-sm bg-accent/10 p-5 shadow-lg shadow-black/5 ring-1 ring-black/5 transition-shadow hover:shadow-xl hover:shadow-black/10">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/80">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    className="text-primary"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                    <line x1="12" x2="12" y1="19" y2="22" />
-                  </svg>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground">
-                    Voice Recording
-                  </p>
-                  <audio controls className="mt-2 w-full" src={item.url} />
-                </div>
-              </div>
-            </div>
-
-            {/* Delete button */}
-            <button
-              onClick={() => handleDelete(item)}
-              disabled={isDeleting}
-              aria-label="Remove audio from album"
-              className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-muted opacity-0 shadow backdrop-blur-sm transition-all hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="18" x2="6" y1="6" y2="18" />
-                <line x1="6" x2="18" y1="6" y2="18" />
-              </svg>
-            </button>
+            )}
           </div>
         );
       })}

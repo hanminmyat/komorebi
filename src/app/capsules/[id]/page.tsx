@@ -7,6 +7,7 @@ import AudioRecorder from "@/components/AudioRecorder";
 import ImageUploader from "@/components/ImageUploader";
 import MediaAlbum from "@/components/MediaAlbum";
 import Logo from "@/components/Logo";
+import EditShareActions from "@/components/EditShareActions";
 
 const MAX_IMAGES = 10;
 const MAX_AUDIO = 1;
@@ -154,7 +155,16 @@ export default async function CapsuleDetailPage({
                 </div>
               </div>
 
-              <div className="self-start">
+              <div className="flex flex-col items-end gap-3 self-start">
+                <div className="flex flex-wrap items-center gap-2">
+                  <EditShareActions
+                    capsuleId={capsule.id}
+                    title={capsule.title}
+                    description={capsule.description}
+                    isPublic={capsule.is_public}
+                    shareToken={capsule.share_token}
+                  />
+                </div>
                 <DeleteCapsuleButton capsuleId={capsule.id} />
               </div>
             </div>
@@ -166,8 +176,22 @@ export default async function CapsuleDetailPage({
           <div className="mb-4 flex items-center justify-between sm:mb-6">
             <h2 className="text-base font-semibold text-foreground sm:text-lg">Album</h2>
             <div className="flex items-center gap-3 text-xs text-muted sm:gap-4 sm:text-sm">
-              <span>📷 {imageCount}/{MAX_IMAGES}</span>
-              <span>🎙 {audioCount}/{MAX_AUDIO}</span>
+              <span className="flex items-center gap-1.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <path d="m21 15-5-5L5 21" />
+                </svg>
+                {imageCount}/{MAX_IMAGES}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  <line x1="12" x2="12" y1="19" y2="22" />
+                </svg>
+                {audioCount}/{MAX_AUDIO}
+              </span>
             </div>
           </div>
 
