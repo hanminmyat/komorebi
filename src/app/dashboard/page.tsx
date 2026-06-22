@@ -22,6 +22,13 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  // Fetch user profile
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .single();
+
   const { data: capsules } = await supabase
     .from("capsules")
     .select("*")
@@ -43,7 +50,7 @@ export default async function DashboardPage() {
   const photoCapsules = allCapsules.filter((c) => c.type === "photo").length;
   const mixedCapsules = allCapsules.filter((c) => c.type === "mixed").length;
 
-  const firstName = user.email?.split("@")[0] || "there";
+  const firstName = profile?.full_name?.split(" ")[0] || user.email?.split("@")[0] || "there";
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -52,9 +59,19 @@ export default async function DashboardPage() {
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <Logo size="sm" href="/" />
           <div className="flex items-center gap-2 sm:gap-4">
-            <span className="hidden text-sm text-muted sm:inline">
-              {user.email}
-            </span>
+            <Link
+              href="/profile"
+              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-muted hover:text-foreground hover:bg-surface transition-colors"
+            >
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <span className="text-xs font-semibold">
+                  {firstName.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <span className="hidden sm:inline">
+                {profile?.full_name || user.email}
+              </span>
+            </Link>
             <LogoutButton />
           </div>
         </div>

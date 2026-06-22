@@ -7,26 +7,72 @@ import { useRouter } from "next/navigation";
 import Logo from "@/components/Logo";
 
 export default function SignupPage() {
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
+  const validate = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!fullName.trim()) {
+      newErrors.fullName = "Full name is required";
+    }
+
+    if (!email) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    if (!password) {
+      newErrors.password = "Password is required";
+    } else if (password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    if (!confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password";
+    } else if (password !== confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    if (!validate()) return;
+
     setLoading(true);
+    setErrors({});
 
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: {
+          full_name: fullName.trim(),
+        },
+      },
     });
 
     if (error) {
-      setError(error.message);
+      // Map Supabase errors to user-friendly messages
+      let friendlyMessage = error.message;
+      if (error.message.includes("already registered")) {
+        friendlyMessage = "An account with this email already exists. Try signing in instead.";
+      } else if (error.message.includes("invalid email")) {
+        friendlyMessage = "Please enter a valid email address.";
+      }
+      setErrors({ general: friendlyMessage });
       setLoading(false);
       return;
     }
@@ -58,7 +104,7 @@ export default function SignupPage() {
             We sent a confirmation link to <strong className="text-foreground">{email}</strong>
           </p>
           <div className="rounded-xl border border-border bg-surface/50 p-4 text-sm text-muted">
-            <p>Click the link in the email to activate your account, then come back to sign in.</p>
+            <p>Click the link in the email to verify your account. You&apos;ll be automatically signed in.</p>
           </div>
           <Link href="/login" className="inline-block font-medium text-foreground underline transition-colors hover:text-primary">
             Back to sign in
@@ -80,11 +126,32 @@ export default function SignupPage() {
         </div>
 
         <form onSubmit={handleSignup} className="mt-8 space-y-4">
-          {error && (
+          {errors.general && (
             <div className="rounded-xl bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/30 dark:text-red-400">
-              {error}
+              {errors.general}
             </div>
           )}
+
+          <div>
+            <label htmlFor="fullName" className="block text-sm font-medium">
+              Full Name
+            </label>
+            <input
+              id="fullName"
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="John Doe"
+              className={`mt-1 block w-full rounded-xl border px-3 py-2.5 shadow-sm focus:ring-2 focus:outline-none transition-colors ${
+                errors.fullName
+                  ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                  : "border-border bg-surface/50 focus:border-primary focus:ring-primary/20"
+              }`}
+            />
+            {errors.fullName && (
+              <p className="mt-1 text-xs text-red-500">{errors.fullName}</p>
+            )}
+          </div>
 
           <div>
             <label htmlFor="email" className="block text-sm font-medium">
@@ -95,9 +162,16 @@ export default function SignupPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
-              className="mt-1 block w-full rounded-xl border border-border bg-surface/50 px-3 py-2.5 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
+              placeholder="john@example.com"
+              className={`mt-1 block w-full rounded-xl border px-3 py-2.5 shadow-sm focus:ring-2 focus:outline-none transition-colors ${
+                errors.email
+                  ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                  : "border-border bg-surface/50 focus:border-primary focus:ring-primary/20"
+              }`}
             />
+            {errors.email && (
+              <p className="mt-1 text-xs text-red-500">{errors.email}</p>
+            )}
           </div>
 
           <div>
@@ -109,10 +183,37 @@ export default function SignupPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              className="mt-1 block w-full rounded-xl border border-border bg-surface/50 px-3 py-2.5 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
+              placeholder="At least 6 characters"
+              className={`mt-1 block w-full rounded-xl border px-3 py-2.5 shadow-sm focus:ring-2 focus:outline-none transition-colors ${
+                errors.password
+                  ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                  : "border-border bg-surface/50 focus:border-primary focus:ring-primary/20"
+              }`}
             />
+            {errors.password && (
+              <p className="mt-1 text-xs text-red-500">{errors.password}</p>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="confirmPassword" className="block text-sm font-medium">
+              Confirm Password
+            </label>
+            <input
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Re-enter your password"
+              className={`mt-1 block w-full rounded-xl border px-3 py-2.5 shadow-sm focus:ring-2 focus:outline-none transition-colors ${
+                errors.confirmPassword
+                  ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                  : "border-border bg-surface/50 focus:border-primary focus:ring-primary/20"
+              }`}
+            />
+            {errors.confirmPassword && (
+              <p className="mt-1 text-xs text-red-500">{errors.confirmPassword}</p>
+            )}
           </div>
 
           <button
