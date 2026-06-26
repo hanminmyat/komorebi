@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Logo from "@/components/Logo";
 
 export default function ResetPasswordPage() {
@@ -10,8 +11,32 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(true);
+  const [validSession, setValidSession] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+
+  useEffect(() => {
+    // Only allow access if the session was created via a password recovery flow
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setValidSession(true);
+      }
+      setVerifying(false);
+    });
+
+    // Fallback: check if there's already a valid session from the callback
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setValidSession(true);
+      }
+      setVerifying(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +65,38 @@ export default function ResetPasswordPage() {
     router.push("/dashboard");
     router.refresh();
   };
+
+  if (verifying) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center text-muted">Verifying...</div>
+      </div>
+    );
+  }
+
+  if (!validSession) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="w-full max-w-md space-y-8 px-4 text-center">
+          <div className="mb-6 flex justify-center">
+            <Logo size="lg" href="/" />
+          </div>
+          <h1 className="text-2xl font-bold sm:text-3xl">
+            Invalid or expired link
+          </h1>
+          <p className="mt-2 text-muted">
+            This password reset link is no longer valid.
+          </p>
+          <Link
+            href="/forgot-password"
+            className="font-medium text-foreground underline transition-colors hover:text-primary"
+          >
+            Request a new reset link
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center">

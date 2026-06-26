@@ -14,11 +14,21 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const ip = getClientIp(request);
 
+  // Rate limit password reset separately — email sending is expensive
+  if (pathname.startsWith("/forgot-password")) {
+    const { success } = rateLimit(`reset:${ip}`, {
+      limit: 5,
+      windowSeconds: 60,
+    });
+    if (!success) {
+      return new NextResponse("Too many requests", { status: 429 });
+    }
+  }
+
   // Rate limit auth routes (login, signup, callback)
   if (
     pathname.startsWith("/login") ||
     pathname.startsWith("/signup") ||
-    pathname.startsWith("/forgot-password") ||
     pathname.startsWith("/reset-password") ||
     pathname.startsWith("/auth/")
   ) {
