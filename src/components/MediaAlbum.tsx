@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import AudioPlayer from "./AudioPlayer";
@@ -32,8 +32,38 @@ export default function MediaAlbum({
   readOnly = false,
 }: MediaAlbumProps) {
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const supabase = createClient();
   const router = useRouter();
+
+  // Generate signed URLs for all media items
+  const generateSignedUrls = useCallback(async () => {
+    const urlMap: Record<string, string> = {};
+    for (const item of items) {
+      const bucket = item.type === "audio" ? "audio" : "images";
+      // If url already looks like a full URL (legacy data), extract the path
+      let path = item.url;
+      if (item.url.includes("/storage/v1/object/")) {
+        const match = item.url.match(
+          /\/storage\/v1\/object\/(?:public|sign)\/(?:audio|images)\/(.+?)(?:\?|$)/
+        );
+        path = match ? match[1] : item.url;
+      }
+      const { data } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(path, 86400); // 24 hours
+      if (data?.signedUrl) {
+        urlMap[item.id] = data.signedUrl;
+      }
+    }
+    setSignedUrls(urlMap);
+  }, [items, supabase]);
+
+  useEffect(() => {
+    if (items.length > 0) {
+      generateSignedUrls();
+    }
+  }, [items, generateSignedUrls]);
 
   const handleDelete = async (item: MediaItem) => {
     const message =
@@ -45,13 +75,17 @@ export default function MediaAlbum({
     setDeleting(item.id);
 
     const bucket = item.type === "audio" ? "audio" : "images";
-    const pathMatch = item.url.match(
-      /\/storage\/v1\/object\/public\/(?:audio|images)\/(.+)$/
-    );
-    if (pathMatch) {
-      await supabase.storage.from(bucket).remove([pathMatch[1]]);
+    // Use stored path directly (or extract from legacy URL)
+    let path = item.url;
+    if (item.url.includes("/storage/v1/object/")) {
+      const match = item.url.match(
+        /\/storage\/v1\/object\/(?:public|sign)\/(?:audio|images)\/(.+?)(?:\?|$)/
+      );
+      path = match ? match[1] : item.url;
     }
+    await supabase.storage.from(bucket).remove([path]);
 
+    // Delete media item — RLS verifies capsule ownership via subquery
     await supabase.from("media_items").delete().eq("id", item.id);
     setDeleting(null);
     router.refresh();
@@ -88,6 +122,7 @@ export default function MediaAlbum({
       {items.map((item, i) => {
         const rotation = ROTATIONS[i % ROTATIONS.length];
         const isDeleting = deleting === item.id;
+        const displayUrl = signedUrls[item.id] || "";
 
         if (item.type === "image") {
           return (
@@ -102,7 +137,7 @@ export default function MediaAlbum({
                 {/* Image */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={item.url}
+                  src={displayUrl}
                   alt="Capsule photo"
                   className="w-full rounded-[2px] object-cover"
                   loading="lazy"
@@ -186,7 +221,7 @@ export default function MediaAlbum({
               </div>
 
               {/* Custom audio player */}
-              <AudioPlayer src={item.url} />
+              <AudioPlayer src={displayUrl} />
             </div>
 
             {/* Decorative pin */}

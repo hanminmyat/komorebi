@@ -109,7 +109,7 @@ export default function CreateCapsuleForm() {
       .single();
 
     if (insertError) {
-      setError(insertError.message);
+      setError("Failed to create capsule. Please try again.");
       setLoading(false);
       return;
     }
@@ -226,6 +226,7 @@ export default function CreateCapsuleForm() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
+            maxLength={200}
             placeholder="e.g., Summer afternoons at Grandma's house"
             className="flex-1 min-w-0 rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted/50 placeholder:text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
           />
@@ -247,6 +248,7 @@ export default function CreateCapsuleForm() {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={4}
+          maxLength={2000}
           placeholder="Tell us a little more about this memory..."
           className="mt-4 w-full rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted/50 placeholder:text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors resize-none"
         />

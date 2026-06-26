@@ -39,7 +39,7 @@ export default function ProfileForm({ user, profile }: ProfileFormProps) {
       });
 
     if (error) {
-      setError(error.message);
+      setError("Failed to update profile. Please try again.");
       setLoading(false);
       return;
     }
@@ -77,6 +77,7 @@ export default function ProfileForm({ user, profile }: ProfileFormProps) {
           type="text"
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
+          maxLength={100}
           placeholder="Enter your full name"
           className="mt-1 block w-full rounded-xl border border-border bg-background px-3 py-2.5 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
         />

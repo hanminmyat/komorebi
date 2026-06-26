@@ -66,7 +66,7 @@ export default function SignupPage() {
 
     if (error) {
       // Map Supabase errors to user-friendly messages
-      let friendlyMessage = error.message;
+      let friendlyMessage = "Something went wrong. Please try again.";
       if (error.message.includes("already registered")) {
         friendlyMessage = "An account with this email already exists. Try signing in instead.";
       } else if (error.message.includes("invalid email")) {
@@ -141,6 +141,7 @@ export default function SignupPage() {
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
+              maxLength={100}
               placeholder="John Doe"
               className={`mt-1 block w-full rounded-xl border px-3 py-2.5 shadow-sm focus:ring-2 focus:outline-none transition-colors ${
                 errors.fullName
@@ -162,6 +163,7 @@ export default function SignupPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              maxLength={254}
               placeholder="john@example.com"
               className={`mt-1 block w-full rounded-xl border px-3 py-2.5 shadow-sm focus:ring-2 focus:outline-none transition-colors ${
                 errors.email
@@ -183,6 +185,7 @@ export default function SignupPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              maxLength={128}
               placeholder="At least 6 characters"
               className={`mt-1 block w-full rounded-xl border px-3 py-2.5 shadow-sm focus:ring-2 focus:outline-none transition-colors ${
                 errors.password
@@ -204,6 +207,7 @@ export default function SignupPage() {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              maxLength={128}
               placeholder="Re-enter your password"
               className={`mt-1 block w-full rounded-xl border px-3 py-2.5 shadow-sm focus:ring-2 focus:outline-none transition-colors ${
                 errors.confirmPassword

@@ -62,14 +62,33 @@ export default async function SharePage({ params }: SharePageProps) {
     notFound();
   }
 
-  // Fetch media items
+  // Fetch media items and generate signed URLs
   const { data: mediaItems } = await supabase
     .from("media_items")
     .select("*")
     .eq("capsule_id", capsule.id)
     .order("order_index", { ascending: true });
 
-  const items = mediaItems || [];
+  const items = await Promise.all(
+    (mediaItems || []).map(async (item: { id: string; type: "audio" | "image"; url: string; order_index: number }) => {
+      const bucket = item.type === "audio" ? "audio" : "images";
+      let path = item.url;
+      // Handle legacy full URLs
+      if (item.url.includes("/storage/v1/object/")) {
+        const match = item.url.match(
+          /\/storage\/v1\/object\/(?:public|sign)\/(?:audio|images)\/(.+?)(?:\?|$)/
+        );
+        path = match ? match[1] : item.url;
+      }
+      const { data } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(path, 86400);
+      return {
+        ...item,
+        url: data?.signedUrl || "",
+      };
+    })
+  );
   const imageCount = items.filter((m: { type: string }) => m.type === "image").length;
   const audioCount = items.filter((m: { type: string }) => m.type === "audio").length;
 

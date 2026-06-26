@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { validateImageFile } from "@/lib/validate-file";
 
 const MAX_IMAGES = 10;
 
@@ -94,6 +95,15 @@ export default function ImageUploader({
 
       for (let i = 0; i < filesToUpload.length; i++) {
         const file = filesToUpload[i];
+
+        // Validate file type via magic bytes
+        const validation = await validateImageFile(file);
+        if (!validation.valid) {
+          setError(validation.error || "Invalid file.");
+          setUploading(false);
+          return;
+        }
+
         const compressed = await compressImage(file);
         const fileName = `${user.id}/${capsuleId}/${Date.now()}-${i}.jpg`;
 
@@ -102,16 +112,13 @@ export default function ImageUploader({
           .upload(fileName, compressed);
         if (uploadError) throw uploadError;
 
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("images").getPublicUrl(fileName);
-
+        // Store the storage path (not a URL) — signed URLs are generated at display time
         const { error: insertError } = await supabase
           .from("media_items")
           .insert({
             capsule_id: capsuleId,
             type: "image",
-            url: publicUrl,
+            url: fileName,
             order_index: imageCount + i,
           });
         if (insertError) throw insertError;
@@ -119,7 +126,7 @@ export default function ImageUploader({
 
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      setError("Upload failed. Please try again.");
     } finally {
       setUploading(false);
       setDragOver(false);

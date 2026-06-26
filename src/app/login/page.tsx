@@ -19,7 +19,8 @@ function LoginForm() {
   useEffect(() => {
     const errorFromCallback = searchParams.get("error");
     if (errorFromCallback) {
-      setError(decodeURIComponent(errorFromCallback));
+      // Never display raw callback errors — show a generic message
+      setError("Authentication failed. Please try again.");
     }
   }, [searchParams]);
 
@@ -34,7 +35,7 @@ function LoginForm() {
     });
 
     if (error) {
-      setError(error.message);
+      setError("Invalid email or password.");
       setLoading(false);
       return;
     }
@@ -71,6 +72,7 @@ function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              maxLength={254}
               className="mt-1 block w-full rounded-xl border border-border bg-surface/50 px-3 py-2.5 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
             />
           </div>
@@ -85,6 +87,7 @@ function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              maxLength={128}
               className="mt-1 block w-full rounded-xl border border-border bg-surface/50 px-3 py-2.5 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
             />
           </div>
