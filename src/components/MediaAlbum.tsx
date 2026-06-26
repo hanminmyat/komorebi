@@ -49,9 +49,12 @@ export default function MediaAlbum({
         );
         path = match ? match[1] : item.url;
       }
-      const { data } = await supabase.storage
+      const { data, error } = await supabase.storage
         .from(bucket)
         .createSignedUrl(path, 86400); // 24 hours
+      if (error) {
+        console.error(`Failed to generate signed URL for ${item.id}:`, error);
+      }
       if (data?.signedUrl) {
         urlMap[item.id] = data.signedUrl;
       }
