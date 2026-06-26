@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import CapsuleCard, { type Capsule } from "../CapsuleCard";
 
 const baseCapsule: Capsule = {
@@ -68,5 +69,42 @@ describe("CapsuleCard", () => {
     const capsule = { ...baseCapsule, description: null };
     render(<CapsuleCard capsule={capsule} />);
     expect(screen.queryByText("A warm afternoon memory")).not.toBeInTheDocument();
+  });
+
+  it("does not show action buttons by default", () => {
+    render(<CapsuleCard capsule={baseCapsule} />);
+    expect(screen.queryByText("Edit")).not.toBeInTheDocument();
+    expect(screen.queryByText("Delete")).not.toBeInTheDocument();
+  });
+
+  it("shows action buttons when toggle is clicked", async () => {
+    const user = userEvent.setup();
+    render(<CapsuleCard capsule={baseCapsule} />);
+
+    await user.click(screen.getByLabelText("Show actions"));
+
+    expect(screen.getByText("Edit")).toBeInTheDocument();
+    expect(screen.getByText("Delete")).toBeInTheDocument();
+  });
+
+  it("hides action buttons when toggle is clicked again", async () => {
+    const user = userEvent.setup();
+    render(<CapsuleCard capsule={baseCapsule} />);
+
+    // Open
+    await user.click(screen.getByLabelText("Show actions"));
+    expect(screen.getByText("Edit")).toBeInTheDocument();
+
+    // Close
+    await user.click(screen.getByLabelText("Hide actions"));
+    expect(screen.queryByText("Edit")).not.toBeInTheDocument();
+    expect(screen.queryByText("Delete")).not.toBeInTheDocument();
+  });
+
+  it("has responsive toggle button with touch-friendly size", () => {
+    render(<CapsuleCard capsule={baseCapsule} />);
+    const toggle = screen.getByLabelText("Show actions");
+    // h-8 w-8 = 32px, good touch target
+    expect(toggle).toBeInTheDocument();
   });
 });

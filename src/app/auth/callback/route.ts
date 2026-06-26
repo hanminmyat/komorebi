@@ -13,11 +13,17 @@ export async function GET(request: Request) {
   }
 
   if (code) {
+    const type = searchParams.get("type");
     const supabase = await createClient();
     const { error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
 
     if (sessionError) {
       return NextResponse.redirect(`${origin}/login?error=auth_failed`);
+    }
+
+    // Password recovery — redirect to reset password page
+    if (type === "recovery") {
+      return NextResponse.redirect(`${origin}/reset-password`);
     }
 
     // Successfully verified — redirect to dashboard

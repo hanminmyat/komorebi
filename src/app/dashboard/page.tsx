@@ -35,12 +35,17 @@ export default async function DashboardPage() {
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
-  // Fetch media counts across all capsules
-  const { data: mediaItems } = await supabase
-    .from("media_items")
-    .select("type, capsule_id");
-
+  // Fetch media counts for user's capsules only
   const allCapsules = capsules || [];
+  const capsuleIds = allCapsules.map((c) => c.id);
+  const { data: mediaItems } =
+    capsuleIds.length > 0
+      ? await supabase
+          .from("media_items")
+          .select("type, capsule_id")
+          .in("capsule_id", capsuleIds)
+      : { data: [] as { type: string; capsule_id: string }[] | null };
+
   const allMedia = mediaItems || [];
   const totalPhotos = allMedia.filter((m) => m.type === "image").length;
   const totalRecordings = allMedia.filter((m) => m.type === "audio").length;

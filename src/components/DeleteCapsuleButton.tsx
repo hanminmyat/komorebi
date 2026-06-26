@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 
 export default function DeleteCapsuleButton({
   capsuleId,
@@ -10,7 +9,6 @@ export default function DeleteCapsuleButton({
   capsuleId: string;
 }) {
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const supabase = createClient();
 
   const handleDelete = async () => {
@@ -61,8 +59,7 @@ export default function DeleteCapsuleButton({
     // Delete the capsule itself
     await supabase.from("capsules").delete().eq("id", capsuleId);
 
-    router.push("/dashboard");
-    router.refresh();
+    window.location.href = "/dashboard";
   };
 
   return (

@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import Logo from "@/components/Logo";
+import PasswordInput from "@/components/PasswordInput";
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState("");
@@ -14,7 +14,6 @@ export default function SignupPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const supabase = createClient();
 
   const validate = (): boolean => {
@@ -79,8 +78,7 @@ export default function SignupPage() {
 
     // If a session is returned, email confirmation is disabled — auto-login
     if (data.session) {
-      router.push("/dashboard");
-      router.refresh();
+      window.location.href = "/dashboard";
       return;
     }
 
@@ -180,14 +178,13 @@ export default function SignupPage() {
             <label htmlFor="password" className="block text-sm font-medium">
               Password
             </label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               maxLength={128}
               placeholder="At least 6 characters"
-              className={`mt-1 block w-full rounded-xl border px-3 py-2.5 shadow-sm focus:ring-2 focus:outline-none transition-colors ${
+              className={`mt-1 block w-full rounded-xl border px-3 py-2.5 pr-10 shadow-sm focus:ring-2 focus:outline-none transition-colors ${
                 errors.password
                   ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
                   : "border-border bg-surface/50 focus:border-primary focus:ring-primary/20"
@@ -202,14 +199,13 @@ export default function SignupPage() {
             <label htmlFor="confirmPassword" className="block text-sm font-medium">
               Confirm Password
             </label>
-            <input
+            <PasswordInput
               id="confirmPassword"
-              type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               maxLength={128}
               placeholder="Re-enter your password"
-              className={`mt-1 block w-full rounded-xl border px-3 py-2.5 shadow-sm focus:ring-2 focus:outline-none transition-colors ${
+              className={`mt-1 block w-full rounded-xl border px-3 py-2.5 pr-10 shadow-sm focus:ring-2 focus:outline-none transition-colors ${
                 errors.confirmPassword
                   ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
                   : "border-border bg-surface/50 focus:border-primary focus:ring-primary/20"
