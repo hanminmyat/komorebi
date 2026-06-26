@@ -38,6 +38,18 @@ export default function MediaAlbum({
 
   // Generate signed URLs for all media items
   const generateSignedUrls = useCallback(async () => {
+    // In readOnly mode, URLs are already signed by the server (admin client)
+    if (readOnly) {
+      const urlMap: Record<string, string> = {};
+      for (const item of items) {
+        if (item.url) {
+          urlMap[item.id] = item.url;
+        }
+      }
+      setSignedUrls(urlMap);
+      return;
+    }
+
     const urlMap: Record<string, string> = {};
     for (const item of items) {
       const bucket = item.type === "audio" ? "audio" : "images";
@@ -60,7 +72,7 @@ export default function MediaAlbum({
       }
     }
     setSignedUrls(urlMap);
-  }, [items, supabase]);
+  }, [items, supabase, readOnly]);
 
   useEffect(() => {
     if (items.length > 0) {
