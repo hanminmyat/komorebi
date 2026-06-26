@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Logo from "@/components/Logo";
@@ -49,6 +50,7 @@ export async function generateMetadata({
 export default async function SharePage({ params }: SharePageProps) {
   const { token } = await params;
   const supabase = await createClient();
+  const admin = createAdminClient();
 
   // Look up capsule by share_token (no auth required)
   const { data: capsule } = await supabase
@@ -62,13 +64,14 @@ export default async function SharePage({ params }: SharePageProps) {
     notFound();
   }
 
-  // Fetch media items and generate signed URLs
+  // Fetch media items (RLS allows public read via share_token)
   const { data: mediaItems } = await supabase
     .from("media_items")
     .select("*")
     .eq("capsule_id", capsule.id)
     .order("order_index", { ascending: true });
 
+  // Use admin client to generate signed URLs (bypasses auth requirement)
   const items = await Promise.all(
     (mediaItems || []).map(async (item: { id: string; type: "audio" | "image"; url: string; order_index: number }) => {
       const bucket = item.type === "audio" ? "audio" : "images";
@@ -80,9 +83,12 @@ export default async function SharePage({ params }: SharePageProps) {
         );
         path = match ? match[1] : item.url;
       }
-      const { data } = await supabase.storage
+      const { data, error } = await admin.storage
         .from(bucket)
         .createSignedUrl(path, 86400);
+      if (error) {
+        console.error(`Failed to generate signed URL for ${item.id}:`, error);
+      }
       return {
         ...item,
         url: data?.signedUrl || "",
