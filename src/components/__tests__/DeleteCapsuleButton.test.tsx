@@ -42,7 +42,6 @@ vi.mock("@/lib/supabase/client", () => ({
 describe("DeleteCapsuleButton", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     vi.stubGlobal("location", { href: "http://localhost:3000/capsules/abc-123" });
   });
 
@@ -55,23 +54,25 @@ describe("DeleteCapsuleButton", () => {
     const user = userEvent.setup();
     render(<DeleteCapsuleButton capsuleId="cap-1" />);
     await user.click(screen.getByText("Delete"));
-    expect(window.confirm).toHaveBeenCalledWith(
-      "Delete this capsule? This cannot be undone."
-    );
+    expect(screen.getByText("Delete capsule?")).toBeInTheDocument();
+    expect(screen.getByText(/permanently delete/)).toBeInTheDocument();
   });
 
   it("does not delete when confirmation cancelled", async () => {
-    vi.spyOn(window, "confirm").mockReturnValue(false);
     const user = userEvent.setup();
     render(<DeleteCapsuleButton capsuleId="cap-1" />);
     await user.click(screen.getByText("Delete"));
+    await user.click(screen.getByText("Cancel"));
     expect(mockDelete).not.toHaveBeenCalled();
   });
 
-  it("redirects to dashboard via window.location.href after delete", async () => {
+  it("deletes and redirects when confirmed", async () => {
     const user = userEvent.setup();
     render(<DeleteCapsuleButton capsuleId="cap-1" />);
     await user.click(screen.getByText("Delete"));
+    // Click the Delete button inside the dialog (second one)
+    const deleteButtons = screen.getAllByRole("button", { name: "Delete" });
+    await user.click(deleteButtons[1]);
     await vi.waitFor(() => {
       expect(window.location.href).toBe("/dashboard");
     });
