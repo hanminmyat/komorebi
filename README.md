@@ -48,7 +48,10 @@ Open [http://localhost:3000](http://localhost:3000).
 |---------|-------------|
 | `npm run dev` | Dev server (hot reload) |
 | `npm run build` | Production build |
+| `npm run start` | Production server |
 | `npm run lint` | ESLint |
+| `npm run test` | Run tests (Vitest) |
+| `npm run test:watch` | Tests in watch mode |
 
 ---
 
@@ -60,6 +63,8 @@ Open [http://localhost:3000](http://localhost:3000).
 | Backend | Supabase (Auth + Postgres + Storage) |
 | Audio | MediaRecorder API — Opus, 96kbps, mono |
 | Images | Client-side compression (max 1600px, JPEG 0.85) |
+| Testing | Vitest, Testing Library (React, jsdom, user-event) |
+| Analytics | Vercel Analytics |
 
 ---
 
@@ -78,7 +83,10 @@ src/
 │   │   └── not-found.tsx         # Friendly "not found" page
 │   ├── login/page.tsx
 │   ├── signup/page.tsx
-│   └── profile/page.tsx
+│   ├── forgot-password/page.tsx  # Request password reset
+│   ├── reset-password/page.tsx   # Set new password
+│   ├── profile/page.tsx
+│   └── auth/callback/route.ts    # OAuth callback handler
 ├── components/
 │   ├── CreateCapsuleForm.tsx     # 3-step wizard
 │   ├── AudioRecorder.tsx         # Record → upload pipeline
@@ -87,11 +95,11 @@ src/
 │   ├── MediaAlbum.tsx            # Polaroid-style masonry album
 │   ├── EditCapsuleModal.tsx      # Edit title/description
 │   ├── ShareButton.tsx           # Toggle public + copy link
-│   └── ...                       # Logo, CapsuleCard, DeleteButton, etc.
+│   └── ...                       # Logo, CapsuleCard, DeleteCapsuleButton, etc.
 ├── lib/supabase/                 # Client, server, middleware
 └── middleware.ts                  # Auth (skips /share for anon)
 
-supabase/migrations/              # 5 migrations (schema, storage, profiles, sharing)
+supabase/migrations/              # 9 migrations (schema, storage, profiles, sharing, security)
 ```
 
 ---
@@ -106,6 +114,7 @@ profiles        → id, full_name, avatar_url, created_at, updated_at
 
 - 1 audio + 10 photos max per capsule
 - Media belongs to a capsule only — no standalone browsing
+- Storage buckets are private — media served via signed URLs
 - Public capsules are readable by anonymous users via RLS
 
 ---
