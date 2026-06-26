@@ -3,9 +3,6 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import DeleteCapsuleButton from "../DeleteCapsuleButton";
 
-const mockPush = vi.fn();
-const mockRefresh = vi.fn();
-const mockSelect = vi.fn();
 const mockDelete = vi.fn();
 const mockRemove = vi.fn();
 
@@ -42,17 +39,11 @@ vi.mock("@/lib/supabase/client", () => ({
   }),
 }));
 
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({
-    push: mockPush,
-    refresh: mockRefresh,
-  }),
-}));
-
 describe("DeleteCapsuleButton", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(window, "confirm").mockReturnValue(true);
+    vi.stubGlobal("location", { href: "http://localhost:3000/capsules/abc-123" });
   });
 
   it("renders Delete button", () => {
@@ -77,13 +68,12 @@ describe("DeleteCapsuleButton", () => {
     expect(mockDelete).not.toHaveBeenCalled();
   });
 
-  it("redirects to dashboard after delete", async () => {
+  it("redirects to dashboard via window.location.href after delete", async () => {
     const user = userEvent.setup();
     render(<DeleteCapsuleButton capsuleId="cap-1" />);
     await user.click(screen.getByText("Delete"));
-    // Wait for async operations
     await vi.waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/dashboard");
+      expect(window.location.href).toBe("/dashboard");
     });
   });
 });

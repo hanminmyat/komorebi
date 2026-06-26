@@ -18,7 +18,7 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback`,
+      redirectTo: `${window.location.origin}/reset-password`,
     });
 
     if (error) {
@@ -26,6 +26,10 @@ export default function ForgotPasswordPage() {
       setLoading(false);
       return;
     }
+
+    // Mark that we're in a password recovery flow so the app can
+    // redirect back to /reset-password after Supabase's verify endpoint.
+    sessionStorage.setItem("komorebi-password-recovery", "true");
 
     setSuccess(true);
     setLoading(false);

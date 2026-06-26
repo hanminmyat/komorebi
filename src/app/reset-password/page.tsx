@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import PasswordInput from "@/components/PasswordInput";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -13,7 +13,6 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(true);
   const [validSession, setValidSession] = useState(false);
-  const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
@@ -42,8 +41,8 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     setError(null);
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
       return;
     }
 
@@ -62,8 +61,7 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    router.push("/dashboard");
-    router.refresh();
+    window.location.href = "/dashboard";
   };
 
   if (verifying) {
@@ -120,14 +118,13 @@ export default function ResetPasswordPage() {
             <label htmlFor="password" className="block text-sm font-medium">
               New password
             </label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               maxLength={128}
-              className="mt-1 block w-full rounded-xl border border-border bg-surface/50 px-3 py-2.5 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
+              className="mt-1 block w-full rounded-xl border border-border bg-surface/50 px-3 py-2.5 pr-10 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
             />
           </div>
 
@@ -138,14 +135,13 @@ export default function ResetPasswordPage() {
             >
               Confirm new password
             </label>
-            <input
+            <PasswordInput
               id="confirm-password"
-              type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               maxLength={128}
-              className="mt-1 block w-full rounded-xl border border-border bg-surface/50 px-3 py-2.5 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
+              className="mt-1 block w-full rounded-xl border border-border bg-surface/50 px-3 py-2.5 pr-10 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
             />
           </div>
 

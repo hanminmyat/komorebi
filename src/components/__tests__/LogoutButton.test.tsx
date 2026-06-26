@@ -1,18 +1,9 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import LogoutButton from "../LogoutButton";
 
-const mockPush = vi.fn();
-const mockRefresh = vi.fn();
-const mockSignOut = vi.fn();
-
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({
-    push: mockPush,
-    refresh: mockRefresh,
-  }),
-}));
+const mockSignOut = vi.fn().mockResolvedValue(undefined);
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
@@ -23,6 +14,12 @@ vi.mock("@/lib/supabase/client", () => ({
 }));
 
 describe("LogoutButton", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Mock window.location
+    vi.stubGlobal("location", { href: "http://localhost:3000/dashboard" });
+  });
+
   it("renders Sign out text", () => {
     render(<LogoutButton />);
     expect(screen.getByText("Sign out")).toBeInTheDocument();
@@ -35,17 +32,10 @@ describe("LogoutButton", () => {
     expect(mockSignOut).toHaveBeenCalled();
   });
 
-  it("redirects to / after sign out", async () => {
+  it("redirects to / via window.location.href after sign out", async () => {
     const user = userEvent.setup();
     render(<LogoutButton />);
     await user.click(screen.getByText("Sign out"));
-    expect(mockPush).toHaveBeenCalledWith("/");
-  });
-
-  it("calls router.refresh after sign out", async () => {
-    const user = userEvent.setup();
-    render(<LogoutButton />);
-    await user.click(screen.getByText("Sign out"));
-    expect(mockRefresh).toHaveBeenCalled();
+    expect(window.location.href).toBe("/");
   });
 });
