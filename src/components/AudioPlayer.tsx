@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 
 interface AudioPlayerProps {
-  src: string;
+  src: string | null;
 }
 
 export default function AudioPlayer({ src }: AudioPlayerProps) {
@@ -72,6 +72,19 @@ export default function AudioPlayer({ src }: AudioPlayerProps) {
   };
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  if (!src) {
+    return (
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/20">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-primary/40">
+            <polygon points="6,4 20,12 6,20" />
+          </svg>
+        </div>
+        <div className="h-1.5 flex-1 animate-pulse rounded-full bg-border" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-3">
