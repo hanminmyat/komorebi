@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import AudioPlayer from "./AudioPlayer";
@@ -32,53 +32,8 @@ export default function MediaAlbum({
   readOnly = false,
 }: MediaAlbumProps) {
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const supabase = createClient();
   const router = useRouter();
-
-  // Generate signed URLs for all media items
-  const generateSignedUrls = useCallback(async () => {
-    // In readOnly mode, URLs are already signed by the server (admin client)
-    if (readOnly) {
-      const urlMap: Record<string, string> = {};
-      for (const item of items) {
-        if (item.url) {
-          urlMap[item.id] = item.url;
-        }
-      }
-      setSignedUrls(urlMap);
-      return;
-    }
-
-    const urlMap: Record<string, string> = {};
-    for (const item of items) {
-      const bucket = item.type === "audio" ? "audio" : "images";
-      // If url already looks like a full URL (legacy data), extract the path
-      let path = item.url;
-      if (item.url.includes("/storage/v1/object/")) {
-        const match = item.url.match(
-          /\/storage\/v1\/object\/(?:public|sign)\/(?:audio|images)\/(.+?)(?:\?|$)/
-        );
-        path = match ? match[1] : item.url;
-      }
-      const { data, error } = await supabase.storage
-        .from(bucket)
-        .createSignedUrl(path, 86400); // 24 hours
-      if (error) {
-        console.error(`Failed to generate signed URL for ${item.id}:`, error);
-      }
-      if (data?.signedUrl) {
-        urlMap[item.id] = data.signedUrl;
-      }
-    }
-    setSignedUrls(urlMap);
-  }, [items, supabase, readOnly]);
-
-  useEffect(() => {
-    if (items.length > 0) {
-      generateSignedUrls();
-    }
-  }, [items, generateSignedUrls]);
 
   const handleDelete = async (item: MediaItem) => {
     const message =
@@ -151,7 +106,7 @@ export default function MediaAlbum({
       {items.map((item, i) => {
         const rotation = ROTATIONS[i % ROTATIONS.length];
         const isDeleting = deleting === item.id;
-        const displayUrl = signedUrls[item.id] ?? null;
+        const displayUrl = item.url || null;
 
         if (item.type === "image") {
           return (

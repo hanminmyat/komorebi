@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import LogoutButton from "@/components/LogoutButton";
@@ -32,34 +33,47 @@ export default async function CapsuleDetailPage({
     redirect("/login");
   }
 
-  // Fetch user profile for display name
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name")
-    .eq("id", user.id)
-    .single();
+  const userId = user.id;
 
-  const firstName = profile?.full_name?.split(" ")[0] || user.email?.split("@")[0] || "there";
-
-  const { data: capsule } = await supabase
-    .from("capsules")
-    .select("*")
-    .eq("id", id)
-    .eq("user_id", user.id)
-    .single();
+  // Run profile + capsule queries in parallel (no dependency between them)
+  const [{ data: profile }, { data: capsule }] = await Promise.all([
+    supabase.from("profiles").select("full_name").eq("id", userId).single(),
+    supabase.from("capsules").select("*").eq("id", id).eq("user_id", userId).single(),
+  ]);
 
   if (!capsule) {
     notFound();
   }
 
+  // Media items depend on capsule.id, so this must come after
   const { data: mediaItems } = await supabase
     .from("media_items")
     .select("*")
     .eq("capsule_id", capsule.id)
     .order("order_index");
 
-  // Separate counts by type
-  const allItems = mediaItems || [];
+  // Pre-generate signed URLs server-side using admin client (bypasses RLS).
+  // Runs all createSignedUrl calls in parallel instead of sequential.
+  const admin = createAdminClient();
+  const allItems = await Promise.all(
+    (mediaItems || []).map(async (item) => {
+      const bucket = item.type === "audio" ? "audio" : "images";
+      // Handle both raw paths (new data) and full URLs (legacy data)
+      let path = item.url;
+      if (item.url.includes("/storage/v1/object/")) {
+        const match = item.url.match(
+          /\/storage\/v1\/object\/(?:public|sign)\/(?:audio|images)\/(.+?)(?:\?|$)/
+        );
+        path = match ? match[1] : item.url;
+      }
+      const { data } = await admin.storage
+        .from(bucket)
+        .createSignedUrl(path, 86400); // 24 hours
+      return { ...item, url: data?.signedUrl || "" };
+    })
+  );
+
+  const firstName = profile?.full_name?.split(" ")[0] || user.email?.split("@")[0] || "there";
   const imageCount = allItems.filter((item) => item.type === "image").length;
   const audioCount = allItems.filter((item) => item.type === "audio").length;
   const mediaCount = allItems.length;
