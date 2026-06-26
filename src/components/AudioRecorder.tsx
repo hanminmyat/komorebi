@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { validateAudioBlob } from "@/lib/validate-file";
 
 const MAX_AUDIO = 1;
 const MIN_SECONDS = 30; // 30 seconds
@@ -57,6 +58,13 @@ export default function AudioRecorder({
       }
     };
   }, []);
+
+  // Revoke object URL on unmount
+  useEffect(() => {
+    return () => {
+      if (audioUrl) URL.revokeObjectURL(audioUrl);
+    };
+  }, [audioUrl]);
 
   const startRecording = async () => {
     setError(null);
@@ -122,6 +130,14 @@ export default function AudioRecorder({
     setError(null);
 
     try {
+      // Validate audio blob
+      const validation = await validateAudioBlob(audioBlob);
+      if (!validation.valid) {
+        setError(validation.error || "Invalid audio file.");
+        setUploading(false);
+        return;
+      }
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -137,32 +153,31 @@ export default function AudioRecorder({
         });
       if (uploadError) throw uploadError;
 
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("audio").getPublicUrl(fileName);
-
+      // Store the storage path (not a URL) — signed URLs are generated at display time
       const { error: insertError } = await supabase
         .from("media_items")
         .insert({
           capsule_id: capsuleId,
           type: "audio",
-          url: publicUrl,
+          url: fileName,
           order_index: audioCount,
         });
       if (insertError) throw insertError;
 
+      if (audioUrl) URL.revokeObjectURL(audioUrl);
       setAudioBlob(null);
       setAudioUrl(null);
       setElapsed(0);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      setError("Upload failed. Please try again.");
     } finally {
       setUploading(false);
     }
   };
 
   const handleDiscard = () => {
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
     setAudioBlob(null);
     setAudioUrl(null);
     setElapsed(0);

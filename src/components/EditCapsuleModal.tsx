@@ -128,7 +128,7 @@ export default function EditCapsuleModal({
       .eq("id", capsuleId);
 
     if (error) {
-      setError(error.message);
+      setError("Failed to save changes. Please try again.");
       setLoading(false);
       return;
     }
@@ -194,6 +194,7 @@ export default function EditCapsuleModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
+              maxLength={200}
               aria-required="true"
               className="mt-1 block w-full rounded-xl border border-border bg-surface/50 px-3 py-2.5 shadow-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
@@ -211,6 +212,7 @@ export default function EditCapsuleModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
+              maxLength={2000}
               className="mt-1 block w-full resize-none rounded-xl border border-border bg-surface/50 px-3 py-2.5 shadow-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>

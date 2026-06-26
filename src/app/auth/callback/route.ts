@@ -7,10 +7,9 @@ export async function GET(request: Request) {
   const error = searchParams.get("error");
   const errorDescription = searchParams.get("error_description");
 
-  // Handle error from Supabase auth
+  // Handle error from Supabase auth — never leak internal error details
   if (error) {
-    const errorMessage = encodeURIComponent(errorDescription || error);
-    return NextResponse.redirect(`${origin}/login?error=${errorMessage}`);
+    return NextResponse.redirect(`${origin}/login?error=auth_failed`);
   }
 
   if (code) {
@@ -18,8 +17,7 @@ export async function GET(request: Request) {
     const { error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
 
     if (sessionError) {
-      const errorMessage = encodeURIComponent(sessionError.message);
-      return NextResponse.redirect(`${origin}/login?error=${errorMessage}`);
+      return NextResponse.redirect(`${origin}/login?error=auth_failed`);
     }
 
     // Successfully verified — redirect to dashboard
