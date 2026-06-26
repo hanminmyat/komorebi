@@ -4,7 +4,9 @@
 
 Turn family stories into living memory capsules — structured archives of voice recordings, photos, and the moments that made them matter.
 
-![Landing page desktop](public/landing-desktop.png)
+🔗 **Live:** [komorebi-one-sable.vercel.app](https://komorebi-one-sable.vercel.app/)
+
+![Landing page](screenshots/landing_page.png)
 
 ---
 
