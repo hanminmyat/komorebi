@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { cache } from "react";
 import Logo from "@/components/Logo";
 import MediaAlbum from "@/components/MediaAlbum";
 
@@ -9,19 +10,25 @@ interface SharePageProps {
   params: Promise<{ token: string }>;
 }
 
+// Cached capsule lookup — shared between generateMetadata and page component
+// to avoid duplicate Supabase queries on the same request.
+const getCapsuleByToken = cache(async (token: string) => {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("capsules")
+    .select("id, title, description, type, memory_date, created_at, is_public")
+    .eq("share_token", token)
+    .eq("is_public", true)
+    .single();
+  return data;
+});
+
 // Generate dynamic Open Graph metadata for rich link previews
 export async function generateMetadata({
   params,
 }: SharePageProps): Promise<Metadata> {
   const { token } = await params;
-  const supabase = await createClient();
-
-  const { data: capsule } = await supabase
-    .from("capsules")
-    .select("title, description, type, is_public")
-    .eq("share_token", token)
-    .eq("is_public", true)
-    .single();
+  const capsule = await getCapsuleByToken(token);
 
   if (!capsule) {
     return { title: "Komorebi — Memory not found" };
@@ -49,22 +56,17 @@ export async function generateMetadata({
 
 export default async function SharePage({ params }: SharePageProps) {
   const { token } = await params;
-  const supabase = await createClient();
   const admin = createAdminClient();
 
-  // Look up capsule by share_token (no auth required)
-  const { data: capsule } = await supabase
-    .from("capsules")
-    .select("id, title, description, type, memory_date, created_at, is_public")
-    .eq("share_token", token)
-    .eq("is_public", true)
-    .single();
+  // Reuses the cached query from generateMetadata — single Supabase round-trip
+  const capsule = await getCapsuleByToken(token);
 
   if (!capsule) {
     notFound();
   }
 
   // Fetch media items (RLS allows public read via share_token)
+  const supabase = await createClient();
   const { data: mediaItems } = await supabase
     .from("media_items")
     .select("*")

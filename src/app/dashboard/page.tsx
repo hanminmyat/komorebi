@@ -22,18 +22,11 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // Fetch user profile
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name")
-    .eq("id", user.id)
-    .single();
-
-  const { data: capsules } = await supabase
-    .from("capsules")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  // Run profile + capsule queries in parallel (no dependency between them)
+  const [{ data: profile }, { data: capsules }] = await Promise.all([
+    supabase.from("profiles").select("full_name").eq("id", user.id).single(),
+    supabase.from("capsules").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+  ]);
 
   // Fetch media counts for user's capsules only
   const allCapsules = capsules || [];

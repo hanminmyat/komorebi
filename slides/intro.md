@@ -169,9 +169,13 @@ Bounded creation, not infinite uploads
 
 <!-- _class: lead -->
 
+# Landing
+
+![w:880](../screenshots/landing_page.png)
+
 # Dashboard
 
-![w:880](screenshots/dashboard.png)
+![w:880](../screenshots/dashboard.png)
 
 ---
 
@@ -179,7 +183,7 @@ Bounded creation, not infinite uploads
 
 # Memory Capsule
 
-![w:880](screenshots/detail_memory.png)
+![w:880](../screenshots/detail_memory.png)
 
 ---
 
@@ -187,7 +191,7 @@ Bounded creation, not infinite uploads
 
 # Public Sharing
 
-![w:880](screenshots/public_view.png)
+![w:880](../screenshots/public_view.png)
 
 ---
 
@@ -196,7 +200,7 @@ Bounded creation, not infinite uploads
 | | |
 |---|---|
 | **Repo** | [github.com/hanminmyat/komorebi](https://github.com/hanminmyat/komorebi) |
-| **Live** | `npm run dev` → http://localhost:3000 |
+| **Live** | `npm run dev` → https://komorebi-one-sable.vercel.app/ |
 | **License** | MIT |
 | **Slides** | `slides/intro.md` · `slides/pitch.md` |
 | **Report** | `slides/report.md` |

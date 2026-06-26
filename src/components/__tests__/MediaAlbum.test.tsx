@@ -2,16 +2,10 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import MediaAlbum, { type MediaItem } from "../MediaAlbum";
 
-const mockCreateSignedUrl = vi.fn().mockResolvedValue({
-  data: { signedUrl: "https://example.com/signed/image.jpg" },
-  error: null,
-});
-
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
     storage: {
       from: () => ({
-        createSignedUrl: mockCreateSignedUrl,
         remove: vi.fn().mockResolvedValue({ data: null, error: null }),
       }),
     },
@@ -27,9 +21,10 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),
 }));
 
+// URLs are now pre-signed server-side, so items arrive with full signed URLs
 const mockItems: MediaItem[] = [
-  { id: "1", type: "image", url: "user/cap/1.jpg", order_index: 0 },
-  { id: "2", type: "audio", url: "user/cap/2.webm", order_index: 1 },
+  { id: "1", type: "image", url: "https://example.supabase.co/storage/v1/object/sign/images/user/cap/1.jpg?token=abc", order_index: 0 },
+  { id: "2", type: "audio", url: "https://example.supabase.co/storage/v1/object/sign/audio/user/cap/2.webm?token=def", order_index: 1 },
 ];
 
 describe("MediaAlbum", () => {
@@ -56,8 +51,9 @@ describe("MediaAlbum", () => {
     expect(screen.queryByLabelText("Remove audio from album")).not.toBeInTheDocument();
   });
 
-  it("generates signed URLs for items", () => {
+  it("uses pre-signed URLs from items directly", () => {
     render(<MediaAlbum items={mockItems} capsuleId="cap-1" />);
-    expect(mockCreateSignedUrl).toHaveBeenCalled();
+    const img = screen.getByAltText("Capsule photo") as HTMLImageElement;
+    expect(img.src).toContain("sign/images/user/cap/1.jpg");
   });
 });

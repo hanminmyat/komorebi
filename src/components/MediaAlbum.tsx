@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import AudioPlayer from "./AudioPlayer";
+import ConfirmDialog from "./ConfirmDialog";
 
 export interface MediaItem {
   id: string;
@@ -32,28 +33,26 @@ export default function MediaAlbum({
   readOnly = false,
 }: MediaAlbumProps) {
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  const [confirmItem, setConfirmItem] = useState<MediaItem | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
   const router = useRouter();
 
-  // Generate signed URLs for all media items
-  const generateSignedUrls = useCallback(async () => {
-    // In readOnly mode, URLs are already signed by the server (admin client)
-    if (readOnly) {
-      const urlMap: Record<string, string> = {};
-      for (const item of items) {
-        if (item.url) {
-          urlMap[item.id] = item.url;
-        }
-      }
-      setSignedUrls(urlMap);
-      return;
-    }
+  const handleDeleteClick = (item: MediaItem) => {
+    setConfirmItem(item);
+  };
 
-    const urlMap: Record<string, string> = {};
-    for (const item of items) {
+  const handleDeleteConfirm = async () => {
+    const item = confirmItem;
+    if (!item) return;
+    setConfirmItem(null);
+    setError(null);
+
+    setDeleting(item.id);
+
+    try {
       const bucket = item.type === "audio" ? "audio" : "images";
-      // If url already looks like a full URL (legacy data), extract the path
+      // Use stored path directly (or extract from legacy URL)
       let path = item.url;
       if (item.url.includes("/storage/v1/object/")) {
         const match = item.url.match(
@@ -61,63 +60,30 @@ export default function MediaAlbum({
         );
         path = match ? match[1] : item.url;
       }
-      const { data, error } = await supabase.storage
-        .from(bucket)
-        .createSignedUrl(path, 86400); // 24 hours
-      if (error) {
-        console.error(`Failed to generate signed URL for ${item.id}:`, error);
+      await supabase.storage.from(bucket).remove([path]);
+
+      // Delete media item — RLS verifies capsule ownership via subquery
+      await supabase.from("media_items").delete().eq("id", item.id);
+
+      // Re-order remaining items to close gaps
+      const remaining = items
+        .filter((i) => i.id !== item.id)
+        .sort((a, b) => a.order_index - b.order_index);
+      for (let i = 0; i < remaining.length; i++) {
+        if (remaining[i].order_index !== i) {
+          await supabase
+            .from("media_items")
+            .update({ order_index: i })
+            .eq("id", remaining[i].id);
+        }
       }
-      if (data?.signedUrl) {
-        urlMap[item.id] = data.signedUrl;
-      }
+
+      router.refresh();
+    } catch {
+      setError("Failed to remove item. Please try again.");
+    } finally {
+      setDeleting(null);
     }
-    setSignedUrls(urlMap);
-  }, [items, supabase, readOnly]);
-
-  useEffect(() => {
-    if (items.length > 0) {
-      generateSignedUrls();
-    }
-  }, [items, generateSignedUrls]);
-
-  const handleDelete = async (item: MediaItem) => {
-    const message =
-      item.type === "audio"
-        ? "Remove this recording? You can only have 1 audio per capsule."
-        : "Remove this photo from the album?";
-    if (!confirm(message)) return;
-
-    setDeleting(item.id);
-
-    const bucket = item.type === "audio" ? "audio" : "images";
-    // Use stored path directly (or extract from legacy URL)
-    let path = item.url;
-    if (item.url.includes("/storage/v1/object/")) {
-      const match = item.url.match(
-        /\/storage\/v1\/object\/(?:public|sign)\/(?:audio|images)\/(.+?)(?:\?|$)/
-      );
-      path = match ? match[1] : item.url;
-    }
-    await supabase.storage.from(bucket).remove([path]);
-
-    // Delete media item — RLS verifies capsule ownership via subquery
-    await supabase.from("media_items").delete().eq("id", item.id);
-
-    // Re-order remaining items to close gaps
-    const remaining = items
-      .filter((i) => i.id !== item.id)
-      .sort((a, b) => a.order_index - b.order_index);
-    for (let i = 0; i < remaining.length; i++) {
-      if (remaining[i].order_index !== i) {
-        await supabase
-          .from("media_items")
-          .update({ order_index: i })
-          .eq("id", remaining[i].id);
-      }
-    }
-
-    setDeleting(null);
-    router.refresh();
   };
 
   if (items.length === 0) {
@@ -147,11 +113,17 @@ export default function MediaAlbum({
   }
 
   return (
-    <div className="columns-1 gap-5 sm:columns-2 lg:columns-3">
+    <>
+      {error && (
+        <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
+      <div className="columns-1 gap-5 sm:columns-2 lg:columns-3">
       {items.map((item, i) => {
         const rotation = ROTATIONS[i % ROTATIONS.length];
         const isDeleting = deleting === item.id;
-        const displayUrl = signedUrls[item.id] ?? null;
+        const displayUrl = item.url || null;
 
         if (item.type === "image") {
           return (
@@ -191,7 +163,7 @@ export default function MediaAlbum({
               {/* Delete button */}
               {!readOnly && (
                 <button
-                  onClick={() => handleDelete(item)}
+                  onClick={() => handleDeleteClick(item)}
                   disabled={isDeleting}
                   aria-label="Remove photo from album"
                   className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-muted opacity-0 shadow-sm backdrop-blur-sm transition-all hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
@@ -265,7 +237,7 @@ export default function MediaAlbum({
             {/* Delete button */}
             {!readOnly && (
               <button
-                onClick={() => handleDelete(item)}
+                onClick={() => handleDeleteClick(item)}
                 disabled={isDeleting}
                 aria-label="Remove audio from album"
                 className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-muted opacity-0 shadow-sm backdrop-blur-sm transition-all hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
@@ -288,6 +260,21 @@ export default function MediaAlbum({
           </div>
         );
       })}
-    </div>
+
+      <ConfirmDialog
+        open={confirmItem !== null}
+        title={confirmItem?.type === "audio" ? "Remove recording?" : "Remove photo?"}
+        description={
+          confirmItem?.type === "audio"
+            ? "This recording will be permanently deleted. You can only have 1 audio per capsule."
+            : "This photo will be permanently removed from the album."
+        }
+        confirmLabel="Remove"
+        variant="danger"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setConfirmItem(null)}
+      />
+      </div>
+    </>
   );
 }
