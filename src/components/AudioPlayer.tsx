@@ -88,6 +88,7 @@ export default function AudioPlayer({ src }: AudioPlayerProps) {
 
   return (
     <div className="flex items-center gap-3">
+      {/* referrerPolicy not supported on <audio> in React types — audio URLs are less exposed than images */}
       <audio ref={audioRef} src={src} preload="metadata" />
 
       {/* Play/Pause button */}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import AudioPlayer from "./AudioPlayer";
@@ -137,12 +138,15 @@ export default function MediaAlbum({
               <div className="relative overflow-hidden rounded-sm bg-white p-2.5 pb-8 shadow-md shadow-black/8 ring-1 ring-black/5 transition-shadow duration-300 hover:shadow-xl hover:shadow-black/12 dark:bg-[#F5F0E8] sm:p-3 sm:pb-10">
                 {/* Image */}
                 {displayUrl ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
+                  <Image
                     src={displayUrl}
                     alt="Capsule photo"
-                    className="w-full rounded-[2px] object-cover"
-                    loading="lazy"
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="rounded-[2px] object-cover"
+                    placeholder="blur"
+                    blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y1ZjBlOCIvPjwvc3ZnPg=="
+                    unoptimized
                   />
                 ) : (
                   <div className="aspect-[4/3] w-full animate-pulse rounded-[2px] bg-black/5" />
