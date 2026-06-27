@@ -12,6 +12,8 @@ export interface MediaItem {
   type: "audio" | "image";
   url: string;
   order_index: number;
+  width?: number | null;
+  height?: number | null;
 }
 
 interface MediaAlbumProps {
@@ -141,9 +143,10 @@ export default function MediaAlbum({
                   <Image
                     src={displayUrl}
                     alt="Capsule photo"
-                    fill
+                    width={item.width || 800}
+                    height={item.height || 600}
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className="rounded-[2px] object-cover"
+                    className="h-auto w-full rounded-[2px] object-cover"
                     placeholder="blur"
                     blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y1ZjBlOCIvPjwvc3ZnPg=="
                     unoptimized
