@@ -23,7 +23,9 @@ export default function ImageUploader({
   const router = useRouter();
   const supabase = createClient();
 
-  const compressImage = (file: File): Promise<Blob> => {
+  const compressImage = (
+    file: File
+  ): Promise<{ blob: Blob; width: number; height: number }> => {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
@@ -57,7 +59,7 @@ export default function ImageUploader({
         // 0.85 quality = medium-high, good balance of size vs quality
         canvas.toBlob(
           (blob) => {
-            if (blob) resolve(blob);
+            if (blob) resolve({ blob, width, height });
             else reject(new Error("Compression failed"));
           },
           "image/jpeg",
@@ -104,12 +106,12 @@ export default function ImageUploader({
           return;
         }
 
-        const compressed = await compressImage(file);
+        const { blob, width, height } = await compressImage(file);
         const fileName = `${user.id}/${capsuleId}/${Date.now()}-${i}.jpg`;
 
         const { error: uploadError } = await supabase.storage
           .from("images")
-          .upload(fileName, compressed);
+          .upload(fileName, blob);
         if (uploadError) throw uploadError;
 
         // Store the storage path (not a URL) — signed URLs are generated at display time
@@ -120,6 +122,8 @@ export default function ImageUploader({
             type: "image",
             url: fileName,
             order_index: imageCount + i,
+            width,
+            height,
           });
         if (insertError) throw insertError;
       }
