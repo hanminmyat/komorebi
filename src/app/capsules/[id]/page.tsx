@@ -1,11 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
+import { Suspense } from "react";
 import LogoutButton from "@/components/LogoutButton";
 import AudioRecorder from "@/components/AudioRecorder";
 import ImageUploader from "@/components/ImageUploader";
-import MediaAlbum from "@/components/MediaAlbum";
+import CapsuleMediaAlbum from "@/components/CapsuleMediaAlbum";
 import Logo from "@/components/Logo";
 import ToggleActions from "@/components/ToggleActions";
 
@@ -17,6 +17,21 @@ const typeColors: Record<string, string> = {
   photo: "bg-leaf/15 text-leaf",
   mixed: "bg-blossom/15 text-blossom",
 };
+
+// Skeleton loader for the album section
+function AlbumSkeleton() {
+  return (
+    <div className="columns-1 gap-5 sm:columns-2 lg:columns-3">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="mb-5 break-inside-animate">
+          <div className="animate-pulse rounded-sm bg-border/50 p-2.5 pb-8 sm:p-3 sm:pb-10">
+            <div className="aspect-[4/3] w-full rounded-[2px] bg-border" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default async function CapsuleDetailPage({
   params,
@@ -35,51 +50,31 @@ export default async function CapsuleDetailPage({
 
   const userId = user.id;
 
-  // Run profile + capsule queries in parallel (no dependency between them)
-  const [{ data: profile }, { data: capsule }] = await Promise.all([
+  // Run profile + capsule + media counts in parallel
+  // Counts use head:true to avoid fetching rows — only the count metadata is returned
+  const [
+    { data: profile },
+    { data: capsule },
+    { count: imageCount },
+    { count: audioCount },
+  ] = await Promise.all([
     supabase.from("profiles").select("full_name").eq("id", userId).single(),
     supabase.from("capsules").select("*").eq("id", id).eq("user_id", userId).single(),
+    supabase.from("media_items").select("id", { count: "exact", head: true }).eq("capsule_id", id).eq("type", "image"),
+    supabase.from("media_items").select("id", { count: "exact", head: true }).eq("capsule_id", id).eq("type", "audio"),
   ]);
 
   if (!capsule) {
     notFound();
   }
 
-  // Media items depend on capsule.id, so this must come after
-  const { data: mediaItems } = await supabase
-    .from("media_items")
-    .select("*")
-    .eq("capsule_id", capsule.id)
-    .order("order_index");
-
-  // Pre-generate signed URLs server-side using admin client (bypasses RLS).
-  // Runs all createSignedUrl calls in parallel instead of sequential.
-  const admin = createAdminClient();
-  const allItems = await Promise.all(
-    (mediaItems || []).map(async (item) => {
-      const bucket = item.type === "audio" ? "audio" : "images";
-      // Handle both raw paths (new data) and full URLs (legacy data)
-      let path = item.url;
-      if (item.url.includes("/storage/v1/object/")) {
-        const match = item.url.match(
-          /\/storage\/v1\/object\/(?:public|sign)\/(?:audio|images)\/(.+?)(?:\?|$)/
-        );
-        path = match ? match[1] : item.url;
-      }
-      const { data } = await admin.storage
-        .from(bucket)
-        .createSignedUrl(path, 86400); // 24 hours
-      return { ...item, url: data?.signedUrl || "" };
-    })
-  );
-
   const firstName = profile?.full_name?.split(" ")[0] || user.email?.split("@")[0] || "there";
-  const imageCount = allItems.filter((item) => item.type === "image").length;
-  const audioCount = allItems.filter((item) => item.type === "audio").length;
-  const mediaCount = allItems.length;
+  const safeImageCount = imageCount ?? 0;
+  const safeAudioCount = audioCount ?? 0;
+  const mediaCount = safeImageCount + safeAudioCount;
 
-  const canAddImage = imageCount < MAX_IMAGES;
-  const canAddAudio = audioCount < MAX_AUDIO;
+  const canAddImage = safeImageCount < MAX_IMAGES;
+  const canAddAudio = safeAudioCount < MAX_AUDIO;
 
   const showImageUploader =
     canAddImage && (capsule.type === "photo" || capsule.type === "mixed");
@@ -166,7 +161,7 @@ export default async function CapsuleDetailPage({
               </span>
               <span className="text-xs text-muted">{createdDate}</span>
               <span className="text-xs text-muted">
-                {imageCount} photo{imageCount !== 1 ? "s" : ""} · {audioCount} recording{audioCount !== 1 ? "s" : ""}
+                {safeImageCount} photo{safeImageCount !== 1 ? "s" : ""} · {safeAudioCount} recording{safeAudioCount !== 1 ? "s" : ""}
               </span>
             </div>
 
@@ -185,7 +180,7 @@ export default async function CapsuleDetailPage({
           </div>
         </div>
 
-        {/* Album Spread */}
+        {/* Album Spread — streams in via Suspense */}
         <section className="mb-8 sm:mb-10">
           <div className="mb-4 flex items-center justify-between sm:mb-6">
             <h2 className="text-base font-semibold text-foreground sm:text-lg">Album</h2>
@@ -196,7 +191,7 @@ export default async function CapsuleDetailPage({
                   <circle cx="8.5" cy="8.5" r="1.5" />
                   <path d="m21 15-5-5L5 21" />
                 </svg>
-                {imageCount}/{MAX_IMAGES}
+                {safeImageCount}/{MAX_IMAGES}
               </span>
               <span className="flex items-center gap-1.5">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -204,12 +199,14 @@ export default async function CapsuleDetailPage({
                   <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                   <line x1="12" x2="12" y1="19" y2="22" />
                 </svg>
-                {audioCount}/{MAX_AUDIO}
+                {safeAudioCount}/{MAX_AUDIO}
               </span>
             </div>
           </div>
 
-          <MediaAlbum items={allItems} capsuleId={capsule.id} />
+          <Suspense fallback={<AlbumSkeleton />}>
+            <CapsuleMediaAlbum capsuleId={capsule.id} userId={userId} />
+          </Suspense>
         </section>
 
         {/* Add to Album */}
@@ -219,12 +216,12 @@ export default async function CapsuleDetailPage({
             <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
               {showImageUploader && (
                 <div>
-                  <ImageUploader capsuleId={capsule.id} imageCount={imageCount} />
+                  <ImageUploader capsuleId={capsule.id} imageCount={safeImageCount} />
                 </div>
               )}
               {showAudioRecorder && (
                 <div>
-                  <AudioRecorder capsuleId={capsule.id} audioCount={audioCount} />
+                  <AudioRecorder capsuleId={capsule.id} audioCount={safeAudioCount} />
                 </div>
               )}
             </div>
@@ -234,7 +231,7 @@ export default async function CapsuleDetailPage({
         {!showImageUploader && !showAudioRecorder && mediaCount > 0 && (
           <div className="rounded-2xl border border-border bg-surface p-4 text-center sm:p-6">
             <p className="text-sm text-muted">
-              Album is full — {imageCount}/{MAX_IMAGES} photos and {audioCount}/{MAX_AUDIO} recording.
+              Album is full — {safeImageCount}/{MAX_IMAGES} photos and {safeAudioCount}/{MAX_AUDIO} recording.
             </p>
             <p className="mt-1 text-xs text-muted">Delete items to make room for new ones.</p>
           </div>

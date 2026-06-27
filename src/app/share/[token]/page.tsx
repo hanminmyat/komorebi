@@ -73,30 +73,58 @@ export default async function SharePage({ params }: SharePageProps) {
     .eq("capsule_id", capsule.id)
     .order("order_index", { ascending: true });
 
-  // Use admin client to generate signed URLs (bypasses auth requirement)
-  const items = await Promise.all(
-    (mediaItems || []).map(async (item: { id: string; type: "audio" | "image"; url: string; order_index: number }) => {
-      const bucket = item.type === "audio" ? "audio" : "images";
-      let path = item.url;
-      // Handle legacy full URLs
-      if (item.url.includes("/storage/v1/object/")) {
-        const match = item.url.match(
-          /\/storage\/v1\/object\/(?:public|sign)\/(?:audio|images)\/(.+?)(?:\?|$)/
-        );
-        path = match ? match[1] : item.url;
-      }
-      const { data, error } = await admin.storage
-        .from(bucket)
-        .createSignedUrl(path, 86400);
-      if (error) {
-        console.error(`Failed to generate signed URL for ${item.id}:`, error);
-      }
-      return {
-        ...item,
-        url: data?.signedUrl || "",
-      };
-    })
-  );
+  // Extract storage paths and group by bucket for batch signed URL generation
+  const extractPath = (url: string): string => {
+    if (url.includes("/storage/v1/object/")) {
+      const match = url.match(
+        /\/storage\/v1\/object\/(?:public|sign)\/(?:audio|images)\/(.+?)(?:\?|$)/
+      );
+      return match ? match[1] : url;
+    }
+    return url;
+  };
+
+  const imageItems = (mediaItems || []).filter((item) => item.type === "image");
+  const audioItems = (mediaItems || []).filter((item) => item.type === "audio");
+
+  // Batch signed URL generation: one API call per bucket instead of N calls
+  const [imageUrls, audioUrls] = await Promise.all([
+    imageItems.length > 0
+      ? admin.storage
+          .from("images")
+          .createSignedUrls(imageItems.map((item) => extractPath(item.url)), 3600)
+      : Promise.resolve({ data: [], error: null }),
+    audioItems.length > 0
+      ? admin.storage
+          .from("audio")
+          .createSignedUrls(audioItems.map((item) => extractPath(item.url)), 3600)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  if (imageUrls.error) {
+    console.error("Failed to generate image signed URLs:", imageUrls.error);
+  }
+  if (audioUrls.error) {
+    console.error("Failed to generate audio signed URLs:", audioUrls.error);
+  }
+
+  // Map signed URLs back to items
+  const signedUrlMap = new Map<string, string>();
+  (imageUrls.data || []).forEach((result) => {
+    if (result.path && result.signedUrl) {
+      signedUrlMap.set(result.path, result.signedUrl);
+    }
+  });
+  (audioUrls.data || []).forEach((result) => {
+    if (result.path && result.signedUrl) {
+      signedUrlMap.set(result.path, result.signedUrl);
+    }
+  });
+
+  const items = (mediaItems || []).map((item) => ({
+    ...item,
+    url: signedUrlMap.get(extractPath(item.url)) || "",
+  }));
   const imageCount = items.filter((m: { type: string }) => m.type === "image").length;
   const audioCount = items.filter((m: { type: string }) => m.type === "audio").length;
 
